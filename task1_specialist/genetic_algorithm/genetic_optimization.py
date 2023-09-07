@@ -93,14 +93,9 @@ class Genetic(object):
             Returns:
                 x_norm (float): The normalized fitness score of the individual.
         """
-        if (max(pfit_pop) - min(pfit_pop)) > 0:
-            x_norm = (x - min(pfit_pop)) / (max(pfit_pop) - min(pfit_pop))
-        else:
-            x_norm = 0
+        min_fit, max_fit = min(pfit_pop), max(pfit_pop)
+        return (x - min_fit) / (max_fit - min_fit) if max_fit - min_fit > 0 else 0.0000000001
 
-        if x_norm <= 0:
-            x_norm = 0.0000000001
-        return x_norm
     
     def evaluate(self, x):
         """
@@ -112,7 +107,7 @@ class Genetic(object):
             Returns:
                 np.array(list): The fitness score of the individual.
         """
-        return np.array(list(map(lambda y: self.simulation(y), x)))
+        return np.array([self.simulation(y) for y in x])
 
     def tournament(self, pop, fit_pop):
         """
@@ -122,13 +117,8 @@ class Genetic(object):
                 pop (list): The population.
                 fit_pop (list): The fitness scores of the population.
         """
-        c1 = np.random.randint(0, pop.shape[0], 1)
-        c2 = np.random.randint(0, pop.shape[0], 1)
-
-        if fit_pop[c1] > fit_pop[c2]:
-            return pop[c1][0]
-        else:
-            return pop[c2][0]
+        c1, c2 = np.random.randint(0, pop.shape[0], 2)
+        return pop[c1][0] if fit_pop[c1] > fit_pop[c2] else pop[c2][0]
         
     def limits(self, x):
         """
@@ -137,12 +127,7 @@ class Genetic(object):
             Args:
                 x (float): The value to be limited.
         """
-        if x > self.dom_u:
-            return self.dom_u
-        elif x < self.dom_l:
-            return self.dom_l
-        else:
-            return x
+        return min(max(x, self.dom_l), self.dom_u)
 
     def crossover(self, pop, fit_pop):
         """
@@ -216,7 +201,6 @@ class Genetic(object):
             print( '\n RUNNING SAVED BEST SOLUTION \n')
             self.env.update_parameter('speed','normal')
             self.evaluate([bsol])
-
             sys.exit(0)
     
     def load_population(self):
@@ -224,9 +208,9 @@ class Genetic(object):
             Initializes population loading old solutions or generating new ones
         """
         if not os.path.exists(experiment_name+'/evoman_solstate'):
-
             print( '\nNEW EVOLUTION\n')
-
+            
+            # Creates new population
             pop = np.random.uniform(self.dom_l, self.dom_u, (self.npop, self.n_vars))
             fit_pop = self.evaluate(pop)
             best = np.argmax(fit_pop)
@@ -234,30 +218,28 @@ class Genetic(object):
             std = np.std(fit_pop)
             ini_g = 0
             solutions = [pop, fit_pop]
+            # Saves results for first population
             self.env.update_solutions(solutions)
         else:
-
             print( '\nCONTINUING EVOLUTION\n')
-
+            # Loads simulation state
             self.env.load_state()
-            pop = env.solutions[0]
-            fit_pop = env.solutions[1]
-
+            # Loads population
+            pop = self.env.solutions[0]
+            fit_pop = self.env.solutions[1]
             best = np.argmax(fit_pop)
             mean = np.mean(fit_pop)
             std = np.std(fit_pop)
 
-            # finds last generation number
-            file_aux  = open(experiment_name+'/gen.txt','r')
-            ini_g = int(file_aux.readline())
-            file_aux.close()
+            # Finds last generation number
+            with open(os.path.join(self.experiment_name, 'gen.txt'), 'r') as file_aux:
+                ini_g = int(file_aux.readline())
 
-        # saves results for first pop
-        file_aux  = open(experiment_name+'/results.txt','a')
-        file_aux.write('\n\ngen best mean std')
-        print( '\n GENERATION '+str(ini_g)+' '+str(round(fit_pop[best],6))+' '+str(round(mean,6))+' '+str(round(std,6)))
-        file_aux.write('\n'+str(ini_g)+' '+str(round(fit_pop[best],6))+' '+str(round(mean,6))+' '+str(round(std,6))   )
-        file_aux.close()
+        # Saves results for first pop
+        with open(os.path.join(self.experiment_name, 'results.txt'), 'a') as file_aux:
+            file_aux.write('\n\ngen best mean std')
+            print('\n GENERATION ' + str(ini_g) + ' ' + str(round(fit_pop[best], 6)) + ' ' + str(round(mean, 6)) + ' ' + str(round(std, 6)))
+            file_aux.write('\n' + str(ini_g) + ' ' + str(round(fit_pop[best], 6)) + ' ' + str(round(mean, 6)) + ' ' + str(round(std, 6)))
 
         return pop, fit_pop, best, mean, std, ini_g
 
@@ -277,72 +259,72 @@ class Genetic(object):
         notimproved = 0
 
         for i in range(ini_g+1, self.gens):
+            # Generate offspring
+            offspring = self.crossover(pop, fit_pop)
+            # Evaluate fitness offspring
+            fit_offspring = self.evaluate(offspring)
+            # Replace offspring and their corresponding fitness into population
+            pop = np.vstack((pop, offspring))
+            fit_pop = np.append(fit_pop, fit_offspring)
 
-            offspring = self.crossover(pop, fit_pop)  # crossover
-            fit_offspring = self.evaluate(offspring)   # evaluation
-            pop = np.vstack((pop,offspring))
-            fit_pop = np.append(fit_pop,fit_offspring)
-
-            best = np.argmax(fit_pop) #best solution in generation
-            fit_pop[best] = float(self.evaluate(np.array([pop[best] ]))[0]) # repeats best eval, for stability issues
+            # Find the best solution in the population
+            best = np.argmax(fit_pop)
+            # Repeat evaluation of the best solution for stability issues
+            fit_pop[best] = float(self.evaluate(np.array([pop[best]]))[0])
+            # Saves best solution
             best_sol = fit_pop[best]
 
-            # selection
-            fit_pop_cp = fit_pop
-            fit_pop_norm =  np.array(list(map(lambda y: self.norm(y, fit_pop_cp), fit_pop))) # avoiding negative probabilities, as fitness is ranges from negative numbers
+            # Selection
+            fit_pop_cp = fit_pop # Copy population fitness for reference
+            # Normalize fitness scores to probabilities, ensuring they are non-negative
+            fit_pop_norm =  np.array(list(map(lambda y: self.norm(y, fit_pop_cp), fit_pop)))
+            # Calculate selection probabilities
             probs = (fit_pop_norm) / (fit_pop_norm).sum()
+            # Randomly choose individuals from the population
             chosen = np.random.choice(pop.shape[0], self.npop , p=probs, replace=False)
+            # Ensure the best individual is retained in the selection (elitism)
             chosen = np.append(chosen[1:], best)
+            # Update the population and fitness scores with the selected individuals
             pop = pop[chosen]
             fit_pop = fit_pop[chosen]
 
-
-            # searching new areas
-
+            # Check stopping criteria
             if best_sol <= last_sol:
                 notimproved += 1
             else:
                 last_sol = best_sol
                 notimproved = 0
-
             if notimproved >= 15:
-
-                file_aux  = open(self.experiment_name+'/results.txt','a')
-                file_aux.write('\ndoomsday')
-                file_aux.close()
-
+                with open(os.path.join(self.experiment_name, 'results.txt'), 'a') as file_aux:
+                    file_aux.write('\ndoomsday')
                 pop, fit_pop = self.doomsday(pop, fit_pop)
                 notimproved = 0
 
+            # Save results 
             best = np.argmax(fit_pop)
             std  =  np.std(fit_pop)
             mean = np.mean(fit_pop)
+            with open(os.path.join(self.experiment_name, 'results.txt'), 'a') as file_aux:
+                print('\n GENERATION ' + str(i) + ' ' + str(round(fit_pop[best], 6)) + ' ' + str(round(mean, 6)) + ' ' + str(round(std, 6)))
+                file_aux.write('\n' + str(i) + ' ' + str(round(fit_pop[best], 6)) + ' ' + str(round(mean, 6)) + ' ' + str(round(std, 6)))
 
-            # saves results
-            file_aux  = open(self.experiment_name+'/results.txt','a')
-            print( '\n GENERATION '+str(i)+' '+str(round(fit_pop[best],6))+' '+str(round(mean,6))+' '+str(round(std,6)))
-            file_aux.write('\n'+str(i)+' '+str(round(fit_pop[best],6))+' '+str(round(mean,6))+' '+str(round(std,6))   )
-            file_aux.close()
+            # Save generation number
+            with open(os.path.join(self.experiment_name, 'gen.txt'), 'w') as file_aux:
+                file_aux.write(str(i))
 
-            # saves generation number
-            file_aux  = open(self.experiment_name+'/gen.txt','w')
-            file_aux.write(str(i))
-            file_aux.close()
-
-            # saves file with the best solution
+            # Save file with the best solution
             np.savetxt(self.experiment_name+'/best.txt',pop[best])
 
-            # saves simulation state
+            # Saves simulation state
             solutions = [pop, fit_pop]
             self.env.update_solutions(solutions)
             self.env.save_state()
-
 
     def main(self):
         """
             Runs the Genetic Algorithm.
         """
-        # Check mode
+        # Check wheter to test or train
         self.check_mode()
 
         # Initializes population loading old solutions or generating new ones
@@ -351,14 +333,17 @@ class Genetic(object):
         # Evolution
         self.evolution(pop, fit_pop, best, mean, std, ini_g)
 
-        fim = time.time() # prints total execution time for experiment
-        print( '\nExecution time: '+str(round((fim-ini)/60))+' minutes \n')
-        print( '\nExecution time: '+str(round((fim-ini)))+' seconds \n')
+        # Prints total execution time for experiment
+        fim = time.time()
+        print('\nExecution time: ' + str(round((fim - ini) / 60)) + ' minutes \n')
+        print('\nExecution time: ' + str(round((fim - ini))) + ' seconds \n')
 
-        file = open(experiment_name+'/neuroended', 'w')  # saves control (simulation has ended) file for bash loop file
-        file.close()
+        # Saves control (simulation has ended) file for bash loop file
+        with open(os.path.join(self.experiment_name, 'neuroended'), 'w') as file:
+            pass
 
-        env.state_to_log() # checks environment state
+        # Checks environment state
+        self.env.state_to_log()
 
 
 #########################################################################################
