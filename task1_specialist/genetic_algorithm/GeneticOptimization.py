@@ -7,13 +7,15 @@
 # Import framework
 import sys 
 from evoman.environment import Environment
-from demo_controller import player_controller
+from Controller import PlayerController
 
 # Import other libs
 import time
 import numpy as np
 from math import fabs,sqrt
 import glob, os
+import argparse
+
 
 #########################################################################################
 #                                [THE GENETIC ALGORITHM]                                #
@@ -96,7 +98,6 @@ class Genetic(object):
         min_fit, max_fit = min(pfit_pop), max(pfit_pop)
         return (x - min_fit) / (max_fit - min_fit) if max_fit - min_fit > 0 else 0.0000000001
 
-    
     def evaluate(self, x):
         """
             Evaluates the fitness score of a given individual.
@@ -186,7 +187,7 @@ class Genetic(object):
                 else:
                     pop[o][j] = pop[order[-1:]][0][j] # dna from best
 
-            fit_pop[o] = self.evaluate([pop[o]])
+                fit_pop[o] = self.evaluate([pop[o]])
 
         return pop, fit_pop
     
@@ -195,9 +196,9 @@ class Genetic(object):
             Checks the mode the simulation is running in.
             If the mode is 'test', the best solution is loaded and run.
         """
-        if run_mode == 'test':
+        if self.run_mode == 'test':
 
-            bsol = np.loadtxt(self.experiment_name+'/best.txt')
+            bsol = np.loadtxt(self.experiment_name+'/best_solution.txt')
             print( '\n RUNNING SAVED BEST SOLUTION \n')
             self.env.update_parameter('speed','normal')
             self.evaluate([bsol])
@@ -207,6 +208,7 @@ class Genetic(object):
         """
             Initializes population loading old solutions or generating new ones
         """
+        # Optimizing from scratch
         if not os.path.exists(experiment_name+'/evoman_solstate'):
             print( '\nNEW EVOLUTION\n')
             
@@ -220,6 +222,7 @@ class Genetic(object):
             solutions = [pop, fit_pop]
             # Saves results for first population
             self.env.update_solutions(solutions)
+        # Optimizing from previous state
         else:
             print( '\nCONTINUING EVOLUTION\n')
             # Loads simulation state
@@ -236,14 +239,52 @@ class Genetic(object):
                 ini_g = int(file_aux.readline())
 
         # Saves results for first pop
-        with open(os.path.join(self.experiment_name, 'results.txt'), 'a') as file_aux:
+        with open(os.path.join(self.experiment_name, 'optimization_logs.txt'), 'a') as file_aux:
             file_aux.write('\n\ngen best mean std')
-            print('\n GENERATION ' + str(ini_g) + ' ' + str(round(fit_pop[best], 6)) + ' ' + str(round(mean, 6)) + ' ' + str(round(std, 6)))
             file_aux.write('\n' + str(ini_g) + ' ' + str(round(fit_pop[best], 6)) + ' ' + str(round(mean, 6)) + ' ' + str(round(std, 6)))
+            print('--------------------------------------')
+            print('GENERATION ' + str(ini_g))
+            print('best mean std')
+            print(str(round(fit_pop[best], 6)) + ' ' + str(round(mean, 6)) + ' ' + str(round(std, 6)))
 
         return pop, fit_pop, best, mean, std, ini_g
+    
+    def save_results(self, i, pop, fit_pop):
+            """
+                Saves the results of the current generation.
 
-    def evolution(self, pop, fit_pop, best, mean, std, ini_g):
+                Args:
+                    i (int): The current generation number.
+                    pop (list): The population.
+                    fit_pop (list): The fitness scores of the population.            
+            """
+
+            # Find stats
+            best = np.argmax(fit_pop)
+            std  =  np.std(fit_pop)
+            mean = np.mean(fit_pop)
+
+            # Saves stats for current generation
+            with open(os.path.join(self.experiment_name, 'optimization_logs.txt'), 'a') as file_aux:
+                print('--------------------------------------')
+                print('GENERATION ' + str(i))
+                print('best mean std')
+                print(str(round(fit_pop[best], 6)) + ' ' + str(round(mean, 6)) + ' ' + str(round(std, 6)))
+                file_aux.write('\n' + str(i) + ' ' + str(round(fit_pop[best], 6)) + ' ' + str(round(mean, 6)) + ' ' + str(round(std, 6)))
+
+            # Saves generation number
+            with open(os.path.join(self.experiment_name, 'gen.txt'), 'w') as file_aux:
+                file_aux.write(str(i))
+            
+            # Save file with the best solution
+            np.savetxt(self.experiment_name+'/best_solution.txt', pop[best])
+
+            # Saves simulation state
+            solutions = [pop, fit_pop]
+            self.env.update_solutions(solutions)
+            self.env.save_state()
+
+    def evolution(self, pop, fit_pop, best, ini_g):
         """
             Runs the evolution of the population.
 
@@ -251,8 +292,6 @@ class Genetic(object):
                 pop (list): The population.
                 fit_pop (list): The fitness scores of the population.
                 best (int): The index of the best individual in the population.
-                mean (float): The mean fitness score of the population.
-                std (float): The standard deviation of the fitness scores of the population.
                 ini_g (int): The initial generation number.
         """
         last_sol = fit_pop[best]
@@ -300,25 +339,8 @@ class Genetic(object):
                 pop, fit_pop = self.doomsday(pop, fit_pop)
                 notimproved = 0
 
-            # Save results 
-            best = np.argmax(fit_pop)
-            std  =  np.std(fit_pop)
-            mean = np.mean(fit_pop)
-            with open(os.path.join(self.experiment_name, 'results.txt'), 'a') as file_aux:
-                print('\n GENERATION ' + str(i) + ' ' + str(round(fit_pop[best], 6)) + ' ' + str(round(mean, 6)) + ' ' + str(round(std, 6)))
-                file_aux.write('\n' + str(i) + ' ' + str(round(fit_pop[best], 6)) + ' ' + str(round(mean, 6)) + ' ' + str(round(std, 6)))
-
-            # Save generation number
-            with open(os.path.join(self.experiment_name, 'gen.txt'), 'w') as file_aux:
-                file_aux.write(str(i))
-
-            # Save file with the best solution
-            np.savetxt(self.experiment_name+'/best.txt',pop[best])
-
-            # Saves simulation state
-            solutions = [pop, fit_pop]
-            self.env.update_solutions(solutions)
-            self.env.save_state()
+            # Saves results for current generation
+            self.save_results(i, pop, fit_pop)
 
     def main(self):
         """
@@ -328,15 +350,16 @@ class Genetic(object):
         self.check_mode()
 
         # Initializes population loading old solutions or generating new ones
-        pop, fit_pop, best, mean, std, ini_g = self.load_population()
+        pop, fit_pop, best, _, _, ini_g = self.load_population()
 
         # Evolution
-        self.evolution(pop, fit_pop, best, mean, std, ini_g)
+        self.evolution(pop, fit_pop, best, ini_g)
 
         # Prints total execution time for experiment
         fim = time.time()
-        print('\nExecution time: ' + str(round((fim - ini) / 60)) + ' minutes \n')
-        print('\nExecution time: ' + str(round((fim - ini))) + ' seconds \n')
+        print('--------------------------------------')
+        print('\nOPTIMIZING COMPLETED!')
+        print('\tExecution time: ' + str(round((fim - ini) / 60)) + ' minutes ' + str(round((fim - ini))) + ' seconds \n')
 
         # Saves control (simulation has ended) file for bash loop file
         with open(os.path.join(self.experiment_name, 'neuroended'), 'w') as file:
@@ -349,38 +372,71 @@ class Genetic(object):
 #########################################################################################
 #                                       [MAIN]:                                         #
 #########################################################################################
-# Set to true for not using visuals and thus making experiments faster.
-headless = True
-if headless:
-    os.environ["SDL_VIDEODRIVER"] = "dummy"
-
-# Choose experiment name
-experiment_name = 'optimization_test'
-if not os.path.exists(experiment_name):
-    os.makedirs(experiment_name)
-
-# Choose number of hidden neurons for a neural network with one hidden layer.
-n_hidden_neurons = 10
-
-# Initialize game simulation in individual evolution mode, for single static enemy.
-env = Environment(experiment_name=experiment_name,
-                  enemies=[8],
-                  playermode="ai",
-                  player_controller=player_controller(n_hidden_neurons),
-                  enemymode="static",
-                  level=2,
-                  speed="fastest",
-                  visuals=False)
-# [NOTE]: Default environment fitness is assumed for experiment
-
-env.state_to_log() # Checks environment state
+def parse_arguments():
+    """
+        Parses the input arguments.
         
-ini = time.time()  # Sets time marker
- 
-# Train Genetic Algorithm
-run_mode = 'train' # train or test
-genetic = Genetic(env, run_mode, n_hidden_neurons, experiment_name)
-genetic.main()
+        Args:
+            enemy (int): The enemy to be used to train the neural network.
+            n_hidden_neurons (int): The number of hidden neurons in the neural network.
+            visuals (bool): Whether to use visuals or not.
+            mode (str): The mode to run the simulation in. Either 'train' or 'test'.
+
+    """
+    parser = argparse.ArgumentParser(description="Your script description here")
+
+    # Add input arguments
+    parser.add_argument('-e', '--enemy', type=int, help='Integer value between 1 and 8')
+    parser.add_argument('-n', '--n_hidden_neurons', type=int, help='Integer value', default=10)
+    parser.add_argument('-v', '--visuals', type=bool, help='Boolean value', default=False)
+    parser.add_argument('-m', '--mode', type=str, help='String value (train or test)', default='train')
+
+    return parser.parse_args()
+
+def check_visuals(visuals):
+    """
+        Checks whether to use visuals or not.
+    """
+    if not visuals:
+        os.environ["SDL_VIDEODRIVER"] = "dummy"
+
+def set_experiment_name(experiment_name):
+    """
+        Sets the experiment name.
+    """
+    if not os.path.exists(experiment_name):
+        os.makedirs(experiment_name)
+
+if __name__ == "__main__":
+
+    # Parse input arguments
+    args = parse_arguments()
+
+    # Check visuals
+    check_visuals(args.visuals)
+
+    # Choose experiment name
+    experiment_name = 'genetic_v_enemy_' + str(args.enemy)
+    set_experiment_name(experiment_name)
+
+    # Initialize game simulation in individual evolution mode, for single static enemy.
+    env = Environment(experiment_name=experiment_name,
+                    enemies=[args.enemy],
+                    playermode="ai",
+                    player_controller=PlayerController(args.n_hidden_neurons),
+                    enemymode="static",
+                    level=2,
+                    speed="fastest",
+                    visuals=False)
+    # [NOTE]: Default environment fitness is assumed for experiment
+
+    env.state_to_log() # Checks environment state
+            
+    ini = time.time()  # Sets time marker
+    
+    # Train Genetic Algorithm
+    genetic = Genetic(env, args.mode, args.n_hidden_neurons, experiment_name)
+    genetic.main()
 
 
 #########################################################################################
