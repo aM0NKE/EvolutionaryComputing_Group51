@@ -29,7 +29,7 @@ def parse_arguments():
     parser.add_argument('-n', '--n_hidden_neurons', type=int, help='Integer value', default=10)
     parser.add_argument('-v', '--visuals', type=bool, help='Boolean value', default=False)
     parser.add_argument('-m', '--mode', type=str, help='String value (train or test)', default='train')
-
+    parser.add_argument('-t', '--trials', type=int, help='Integer value', default=10)
     return parser.parse_args()
 
 def check_visuals(visuals):
@@ -58,21 +58,30 @@ if __name__ == "__main__":
     experiment_name = 'genetic_v_enemy_' + str(args.enemy)
     mkdir_experiment(experiment_name)
 
-    # Initialize game simulation in individual evolution mode, for single static enemy.
-    env = Environment(experiment_name=experiment_name,
-                    enemies=[args.enemy],
-                    playermode="ai",
-                    player_controller=PlayerController(args.n_hidden_neurons),
-                    enemymode="static",
-                    level=2,
-                    speed="fastest",
-                    visuals=False)
-    # [NOTE]: Default environment fitness is assumed for experiment
+    # Run the simulation for the specified number of trials
+    for t in range(args.trials):
+        # Print experiment header
+        print('---------------------------------------------------------------------------------')
+        print('                               TRIAL: ' + str(t))
+        print('---------------------------------------------------------------------------------')
+        # Set trail name
+        trail_name = experiment_name + '/trial_' + str(t)
+        os.makedirs(trail_name)
+        # Initialize game simulation in individual evolution mode, for single static enemy.
+        env = Environment(experiment_name=trail_name,
+                        enemies=[args.enemy],
+                        playermode="ai",
+                        player_controller=PlayerController(args.n_hidden_neurons),
+                        enemymode="static",
+                        level=2,
+                        speed="fastest",
+                        visuals=False)
+        # [NOTE]: Default environment fitness is assumed for experiment
 
-    env.state_to_log() # Checks environment state
-            
-    ini = time.time()  # Sets time marker
-    
-    # Run Genetic Algorithm
-    genetic = GeneticOptimization(env, args.mode, args.n_hidden_neurons, experiment_name)
-    genetic.run()
+        env.state_to_log() # Checks environment state
+                
+        ini = time.time()  # Sets time marker
+        
+        # Run Genetic Algorithm
+        genetic = GeneticOptimization(env, args.mode, args.n_hidden_neurons, trail_name)
+        genetic.run()
