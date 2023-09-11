@@ -88,7 +88,7 @@ if __name__ == "__main__":
     all_max_gain = []
 
     # For each trial
-    trials = glob.glob(args.experiment_name + '/*')
+    trials = glob.glob(args.experiment_name + '/trial*')
     for t in trials:
         # Get mean, std, max fitness over all trials
         data = pd.read_csv(t + '/optimization_logs.txt', sep='\s+', header=0)
