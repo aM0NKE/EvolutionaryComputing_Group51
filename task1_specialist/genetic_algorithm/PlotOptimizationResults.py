@@ -10,11 +10,7 @@ def parse_arguments():
         Parses the input arguments.
         
         Args:
-            enemy (int): The enemy to be used to train the neural network.
-            n_hidden_neurons (int): The number of hidden neurons in the neural network.
-            visuals (bool): Whether to use visuals or not.
-            mode (str): The mode to run the simulation in. Either 'train' or 'test'.
-
+            experiment_name (str): The name of the experiment to plot the results for.
     """
     parser = argparse.ArgumentParser(description="Your script description here")
 

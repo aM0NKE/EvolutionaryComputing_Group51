@@ -16,18 +16,12 @@ def parse_arguments():
         Args:
             enemy (int): The enemy to be used to train the neural network.
             n_hidden_neurons (int): The number of hidden neurons in the neural network.
-            visuals (bool): Whether to use visuals or not.
-            mode (str): The mode to run the simulation in. Either 'train' or 'test'.
-
 	"""
 	parser = argparse.ArgumentParser(description="Your script description here")
 
 	# Add input arguments
 	parser.add_argument('-e', '--enemy', type=int, help='Integer value between 1 and 8', default=8)
 	parser.add_argument('-n', '--n_hidden_neurons', type=int, help='Integer value', default=10)
-	parser.add_argument('-v', '--visuals', type=bool, help='Boolean value', default=False)
-	parser.add_argument('-m', '--mode', type=str, help='String value (train or test)', default='train')
-	parser.add_argument('-t', '--trials', type=int, help='Integer value', default=0)
 
 	return parser.parse_args()
 
