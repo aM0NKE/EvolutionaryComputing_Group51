@@ -14,11 +14,11 @@
 	- `-n`: number of neurons.
 	- `-t`: number of optimization trials.
 ### Step 2: Plot Results
-- Command: `python3 PlotOptimizationResults.py -e genetic_v_enemy_8/`
+- Command: `python3 PlotResults.py -e genetic_v_enemy_8/`
 - Flags: 
 	- `-e`: directory to the experiment
 ### Step 3: Show Solution
-- Command: `python3 ShowBestSolution.py -e 8 -n 10 `
+- Command: `python3 ShowSolution.py -e 8 -n 10 `
 	- Flags:
 		- `-e`: Evoman enemy (1-8).
 		- `-n`: number of neurons

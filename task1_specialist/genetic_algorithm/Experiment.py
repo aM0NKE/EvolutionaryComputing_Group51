@@ -29,7 +29,6 @@ def parse_arguments():
     parser.add_argument('-n', '--n_hidden_neurons', type=int, help='Integer value', default=10)
     parser.add_argument('-t', '--trials', type=int, help='Integer value', default=10)
     parser.add_argument('-v', '--visuals', type=bool, help='Boolean value', default=False)
-    parser.add_argument('-m', '--mode', type=str, help='String value (train or test)', default='train')
     return parser.parse_args()
 
 def check_visuals(visuals):
@@ -61,6 +60,8 @@ if __name__ == "__main__":
     experiment_name = 'genetic_v_enemy_' + str(args.enemy)
     mkdir_experiment(experiment_name)
 
+    experiment_time = time.time()  # Sets time marker
+
     # Run the simulation for the specified number of trials
     for t in range(args.trials):
         # Print experiment header
@@ -78,13 +79,29 @@ if __name__ == "__main__":
                         enemymode="static",
                         level=2,
                         speed="fastest",
-                        visuals=False)
+                        visuals=args.visuals)
         # [NOTE]: Default environment fitness is assumed for experiment
-
         env.state_to_log() # Checks environment state
                 
-        ini = time.time()  # Sets time marker
+        trail_time = time.time()  # Sets time marker
         
+        # Set Genetic Algorithm parameters
+        n_hidden_neurons = args.n_hidden_neurons
+        dom_u = 1
+        dom_l = -1
+        npop = 100
+        gens = 20
+        selection_prob = 0.2
+        crossover_prob = 0.2
+        mutation_prob = 0.2
         # Run Genetic Algorithm
-        genetic = GeneticOptimization(env, args.mode, args.n_hidden_neurons, trail_name)
+        genetic = GeneticOptimization(env, trail_name, n_hidden_neurons, dom_u, dom_l, npop, gens, selection_prob, crossover_prob, mutation_prob)
         genetic.run()
+
+        print('---------------------------------------------------------------------------------')
+        print('TRIAL ' + str(t) + ' COMPLETED!')
+        print('Total optimiztion time: ' + str(round(time.time() - trail_time)) + ' seconds')
+    
+    print('---------------------------------------------------------------------------------')
+    print('EXPERIMENT COMPLETED!')
+    print('Total experiment time: ' + str(round(time.time() - experiment_time)) + ' seconds')

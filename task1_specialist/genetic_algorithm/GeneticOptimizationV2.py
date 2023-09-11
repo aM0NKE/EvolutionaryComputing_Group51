@@ -34,41 +34,37 @@ class GeneticOptimization(object):
         experiment_name (str): The name of the experiment to be run.
     """
 
-    def __init__(self, env, mode, n_hidden_neurons, experiment_name):
+    def __init__(self, env, experiment_name, n_hidden_neurons=10, dom_u=1, dom_l=-1, npop=100, gens=25, selection_prob=0.2, crossover_prob=0.2, mutation_prob=0.2):
         """
             Initializes the Genetic Algorithm.
             
             Args:
                 env (Environment): The Evoman game environment to be used.
-                mode (str): The mode to run the simulation in. Either 'train' or 'test'.
-                n_hidden_neurons (int): The number of hidden neurons in the neural network.
                 experiment_name (str): The name of the experiment to be run.
-            
-            Params:
+                n_hidden_neurons (int): The number of hidden neurons in the neural network.
                 n_vars (int): The number of variables in the neural network.
                 dom_u (int): The upper limit for weights and biases.
                 dom_l (int): The lower limit for weights and biases.
                 npop (int): The population size.
                 gens (int): The number of generations.
-                mutation (float): The mutation rate.
-                last_best (int): The last best fitness score.
-
+                selection_prob (float): The probability of selecting an individual for reproduction.
+                crossover_prob (float): The probability of performing crossover on the parents.
+                mutation_prob (float): The probability of performing mutation on the offspring.
         """
         # Initialize input arguments
         self.env = env
-        self.run_mode = mode
-        self.n_hidden_neurons = n_hidden_neurons
         self.experiment_name = experiment_name
 
         # Initialize genetic algorithm parameters
+        self.n_hidden_neurons = n_hidden_neurons
         self.n_vars = (self.env.get_num_sensors() + 1) * n_hidden_neurons + (n_hidden_neurons + 1) * 5
-        self.dom_u = 1
-        self.dom_l = -1
-        self.npop = 100
-        self.gens = 20
-        self.selection_prob = 0.2
-        self.crossover_prob = 0.2
-        self.mutation_prob = 0.2
+        self.dom_u = dom_u
+        self.dom_l = dom_l
+        self.npop = npop
+        self.gens = gens
+        self.selection_prob = selection_prob
+        self.crossover_prob = crossover_prob
+        self.mutation_prob = mutation_prob
 
         # Keep track of the population and fitness
         self.pop = None
