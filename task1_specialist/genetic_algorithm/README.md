@@ -10,15 +10,15 @@
 ### Step 1: Run Experiment
 - Command: `python3 Experiment.py -e 8 -n 10 -t 5`
 - Flags:
-	- `-e`: Evoman enemy (1-8).
-	- `-n`: number of neurons.
-	- `-t`: number of optimization trials.
+	- `-e`: Evoman enemy (1-8)
+	- `-n`: number of neurons
+	- `-t`: number of optimization trials
 ### Step 2: Plot Results
 - Command: `python3 PlotResults.py -e genetic_v_enemy_8/`
 - Flags: 
 	- `-e`: directory to the experiment
 ### Step 3: Show Solution
-- Command: `python3 ShowSolution.py -e 8 -n 10 `
+- Command: `python3 ShowSolution.py -e 8 -n 10`
 	- Flags:
-		- `-e`: Evoman enemy (1-8).
+		- `-e`: Evoman enemy (1-8)
 		- `-n`: number of neurons
