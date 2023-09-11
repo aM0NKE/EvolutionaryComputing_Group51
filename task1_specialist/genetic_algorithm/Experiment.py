@@ -45,6 +45,9 @@ def mkdir_experiment(experiment_name):
     """
     if not os.path.exists(experiment_name):
         os.makedirs(experiment_name)
+    else:
+        os.system('rm -r ' + experiment_name)
+        os.makedirs(experiment_name)
 
 if __name__ == "__main__":
 

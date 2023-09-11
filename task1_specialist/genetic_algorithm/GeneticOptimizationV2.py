@@ -66,9 +66,9 @@ class GeneticOptimization(object):
         self.dom_l = -1
         self.npop = 100
         self.gens = 20
-        self.selection_param = 0.2
-        self.crossover_param = 0.2
-        self.mutation_param = 0.2
+        self.selection_prob = 0.2
+        self.crossover_prob = 0.2
+        self.mutation_prob = 0.2
 
         # Keep track of the population and fitness
         self.pop = None
@@ -80,26 +80,13 @@ class GeneticOptimization(object):
         """
             Initializes the population from scratch or loads from previous state.
         """
-        if not os.path.exists(self.experiment_name+'/evoman_solstate'):
-            print("Optimizing from scratch.")
-            # Initialize population
-            self.pop = np.random.uniform(self.dom_l, self.dom_u, (self.npop, self.n_vars))
-            # Evaluate fitness
-            self.evaluate_population()
-            # Save initial state
-            self.save_results(0)
-        else:
-            print("Optimizing from previous state.")
-            # Load previous state
-            self.env.load_state()
-            # Load state's population and fitness
-            self.pop = self.env.solutions[0]
-            self.fit_pop = self.env.solutions[1]
-            
-            # Find last generation number
-            with open(os.path.join(self.experiment_name, 'gen.txt'), 'r') as file_aux:
-                ini_g = int(file_aux.readline())
-            self.save_results(ini_g)
+        print("Optimizing from scratch.")
+        # Initialize population
+        self.pop = np.random.uniform(self.dom_l, self.dom_u, (self.npop, self.n_vars))
+        # Evaluate fitness
+        self.evaluate_population()
+        # Save initial state
+        self.save_results(0)
 
     def evaluate_population(self):
         """
@@ -112,7 +99,7 @@ class GeneticOptimization(object):
         """
             Selects parents for reproduction using tournament selection.
         """
-        num_parents = int(self.npop * self.selection_param)
+        num_parents = int(self.npop * self.selection_prob)
         parents = []
         
         for _ in range(num_parents):
@@ -133,7 +120,7 @@ class GeneticOptimization(object):
             Args:
                 parents (np.array): The parents to perform crossover on.
         """
-        num_offspring = self.npop - int(self.npop * self.crossover_param)
+        num_offspring = self.npop - int(self.npop * self.crossover_prob)
         offspring = []
         
         for _ in range(num_offspring):
@@ -150,7 +137,7 @@ class GeneticOptimization(object):
         """
         Apply mutation to the population.
         """
-        num_mutations = int(self.npop * self.n_vars * self.mutation_param)
+        num_mutations = int(self.npop * self.n_vars * self.mutation_prob)
         mutation_indices = np.random.choice(self.npop * self.n_vars, size=num_mutations, replace=False)
         
         for i in mutation_indices:
