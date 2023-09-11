@@ -1,8 +1,13 @@
+# Import framework
+from evoman.environment import Environment
+from Controller import PlayerController
+
 # Import libs
 import argparse
 import glob
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def parse_arguments():
@@ -74,11 +79,49 @@ def plot_gain(experiment_name, data, all_mean_gain, all_std_gain, all_max_gain):
 
     # Save plot
     plt.savefig(experiment_name + '/gain_plot.png')
+    
+def boxplot(experiment_name, runs, enemy, n_hidden_neurons):
+
+    gains = []
+    trials = glob.glob(experiment_name + '/trial*')
+    for t in trials:
+        for _ in range(runs):
+
+            # Initialize environment
+            env = Environment(experiment_name=t,
+                            enemies=[enemy],
+                            playermode="ai",
+                            player_controller=PlayerController(n_hidden_neurons),
+                            enemymode="static",
+                            level=2,
+                            speed="fastest",
+                            visuals=False)
+            
+            # Load best solution
+            best_solution = np.loadtxt(t + '/best_solution.txt')
+
+            # Play game
+            fitness, player_hp, enemy_hp, time = env.play(pcont=best_solution)
+
+            # Calculate gain
+            gain = player_hp - enemy_hp 
+            gains.append(gain)
+
+    # Draw boxplot
+    plt.boxplot(gains, labels=['Genetic Algorithm'])
+    plt.xlabel('Approach')
+    plt.ylabel('Gain')
+    plt.title('Genetic v. Enemy ' + experiment_name.split('_')[-1][0])
+    plt.show()
+
+    # Save plot
+    plt.savefig(experiment_name + '/boxplot.png')
 
 if __name__ == "__main__":
 
     # Parse input arguments
     args = parse_arguments()
+    enemy = args.experiment_name.split('_')[-1][0]
 
     all_mean_fit = []
     all_std_fit = []
@@ -101,3 +144,4 @@ if __name__ == "__main__":
 
     plot_fitness(args.experiment_name, data, all_mean_fit, all_std_fit, all_max_fit)
     plot_gain(args.experiment_name, data, all_mean_gain, all_std_gain, all_max_gain)
+    boxplot(args.experiment_name, 10, enemy, 10)

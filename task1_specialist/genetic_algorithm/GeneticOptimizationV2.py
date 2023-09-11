@@ -88,8 +88,12 @@ class GeneticOptimization(object):
         """
             Evaluates the fitness of each individual in the population.
         """
-        self.fit_pop = np.array([self.env.play(pcont=p)[0] for p in self.pop])
-        self.gain_pop = np.array([self.env.play(pcont=p)[1] - self.env.play(pcont=p)[2] for p in self.pop])
+        self.fit_pop, self.gain_pop = [], []
+        for p in self.pop:
+            fitness, player_hp, enemy_hp, time = self.env.play(pcont=p)
+            gain = player_hp - enemy_hp
+            self.fit_pop.append(fitness)
+            self.gain_pop.append(gain)
 
     def selection(self):
         """

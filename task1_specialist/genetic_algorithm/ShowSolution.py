@@ -55,13 +55,13 @@ if __name__ == "__main__":
 
 	# Initialize environment for single objective mode (specialist)  with static enemy and ai player
 	env = Environment(experiment_name=best_solution_trial_name,
+					enemies=[args.enemy],
 					playermode="ai",
 					player_controller=PlayerController(args.n_hidden_neurons),
 					speed="normal",
 					enemymode="static",
 					level=2,
 					visuals=True)
-	env.update_parameter('enemies',[args.enemy]) # update the enemy
 
 	# Load specialist controller
 	sol = np.loadtxt(best_solution_trial_name+'/best_solution.txt')
