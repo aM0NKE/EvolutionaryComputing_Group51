@@ -1,11 +1,12 @@
 # Import framework
 from evoman.environment import Environment
-from Controller import PlayerController
+from NEATController import NEATPlayerController
 
 # Import libs
 import argparse
 import glob
 import pandas as pd
+import pickle
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
@@ -39,10 +40,10 @@ def plot_fitness(show, experiment_name, data, all_mean_fit, all_std_fit, all_max
     max_max_fit = [max(x) for x in zip(*all_max_fit)]
     
     # Draw lines
-    plt.plot(data['gen'], avg_mean_fit, marker='o', linestyle='-', label='Avg. Mean Fitness', color='blue')
-    plt.fill_between(data['gen'], min_mean_fit, max_mean_fit, alpha=0.2, color='blue')
-    plt.plot(data['gen'], avg_max_fit, marker='o', linestyle='-', label='Avg. Max Fitness', color='red')
-    plt.fill_between(data['gen'], min_max_fit, max_max_fit, alpha=0.2, color='red')
+    plt.plot(data.index, avg_mean_fit, marker='o', linestyle='-', label='Avg. Mean Fitness', color='blue')
+    plt.fill_between(data.index, min_mean_fit, max_mean_fit, alpha=0.2, color='blue')
+    plt.plot(data.index, avg_max_fit, marker='o', linestyle='-', label='Avg. Max Fitness', color='red')
+    plt.fill_between(data.index, min_max_fit, max_max_fit, alpha=0.2, color='red')
 
     # Show plot
     plt.title('Genetic v. Enemy ' + experiment_name.split('_')[-1][0])
@@ -70,10 +71,10 @@ def plot_gain(show, experiment_name, data, all_mean_gain, all_std_gain, all_max_
     max_max_gain = [max(x) for x in zip(*all_max_gain)]
     
     # Draw lines
-    plt.plot(data['gen'], avg_mean_gain, marker='o', linestyle='-', label='Avg. Mean Gain', color='blue')
-    plt.fill_between(data['gen'], min_mean_gain, max_mean_gain, alpha=0.2, color='blue')
-    plt.plot(data['gen'], avg_max_gain, marker='o', linestyle='-', label='Avg. Max Gain', color='red')
-    plt.fill_between(data['gen'], min_max_gain, max_max_gain, alpha=0.2, color='red')
+    plt.plot(data.index, avg_mean_gain, marker='o', linestyle='-', label='Avg. Mean Gain', color='blue')
+    plt.fill_between(data.index, min_mean_gain, max_mean_gain, alpha=0.2, color='blue')
+    plt.plot(data.index, avg_max_gain, marker='o', linestyle='-', label='Avg. Max Gain', color='red')
+    plt.fill_between(data.index, min_max_gain, max_max_gain, alpha=0.2, color='red')
 
     # Show plot
     plt.title('Genetic v. Enemy ' + experiment_name.split('_')[-1][0])
@@ -100,14 +101,15 @@ def boxplot(show, experiment_name, runs, enemy, n_hidden_neurons):
             env = Environment(experiment_name=t,
                             enemies=[enemy],
                             playermode="ai",
-                            player_controller=PlayerController(n_hidden_neurons),
+                            player_controller=NEATPlayerController(),
                             enemymode="static",
                             level=2,
                             speed="fastest",
                             visuals=False)
             
             # Load best solution
-            best_solution = np.loadtxt(t + '/best_solution.txt')
+            with open(t+'/best_solution', mode='rb') as file:
+                best_solution = pickle.load(file)
 
             # Play game
             fitness, player_hp, enemy_hp, time = env.play(pcont=best_solution)
