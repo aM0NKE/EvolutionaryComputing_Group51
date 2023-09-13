@@ -26,18 +26,25 @@ def parse_arguments():
 	return parser.parse_args()
 
 def find_best_solution(experiment_name):
+	"""
+        Finds the best solution for a given experiment.
 
+        Args:
+            experiment_name (str): The name of the experiment to find the best solution for.
+    """
+    # Initialize variables
 	best_solution_trial_name = ''
-	best_solution_fitness = 0
+	best_solution_gain = -100
 
 	trials = glob.glob(experiment_name + '/trial_*')
 	for t in trials:
 		# Find the best solution for each trial
 		data = pd.read_csv(t + '/optimization_logs.txt', sep='\s+', header=0)
-		current_solution = data['max_gain'].iloc[-1]
+		current_solution = max(data['max_gain'])
+
 		# Check if current solution is better than the best solution
-		if current_solution > best_solution_fitness:
-			best_solution_fitness = current_solution
+		if current_solution > best_solution_gain:
+			best_solution_gain = current_solution
 			best_solution_trial_name = t
 
 	return best_solution_trial_name

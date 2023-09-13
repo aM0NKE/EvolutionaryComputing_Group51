@@ -13,7 +13,7 @@ class NEATOptimization(object):
     """
         This class implements the NEAT algorithm.
     """
-    def __init__(self, env, experiment_name, gens, config):
+    def __init__(self, env, experiment_name, gens):
         """
             Initializes the NEAT algorithm.
 
@@ -27,7 +27,9 @@ class NEATOptimization(object):
         self.env = env
         self.experiment_name = experiment_name
         self.gens = gens
-        self.config = config
+        self.config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
+                                neat.DefaultSpeciesSet, neat.DefaultStagnation,
+                                'NEATConfig')
 
         # Keep track of the population and fitness
         self.pop = None

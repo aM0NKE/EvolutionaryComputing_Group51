@@ -25,6 +25,7 @@ def parse_arguments():
     # Add input arguments
     parser.add_argument('-e', '--enemy', type=int, help='Integer value between 1 and 8', default=8)
     parser.add_argument('-t', '--trials', type=int, help='Integer value', default=10)
+    parser.add_argument('-g', '--gens', type=int, help='Integer value', default=25)
     parser.add_argument('-v', '--visuals', type=bool, help='Boolean value', default=False)
     
     return parser.parse_args()
@@ -82,15 +83,9 @@ if __name__ == "__main__":
         env.state_to_log() # Checks environment state
                 
         trail_time = time.time()  # Sets time marker for individual trial
-        
-        # Set NEAT parameters
-        gens = 25
-        neat_config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
-                                neat.DefaultSpeciesSet, neat.DefaultStagnation,
-                                'NEATConfig')
 
         # Run NEAT optimization
-        neat_obj = NEATOptimization(env, trail_name, gens, neat_config)
+        neat_obj = NEATOptimization(env, trail_name, args.gens)
         neat_obj._run()
 
         print('---------------------------------------------------------------------------------')
