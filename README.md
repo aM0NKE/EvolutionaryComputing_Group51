@@ -12,7 +12,7 @@
 
  | **Name**       | **E-mail**                     | **Username** |
  |----------------|--------------------------------|--------------|
- | Jade Dubbeld   |                                | [jygdub](https://github.com/jygdub)         |
+ | Jade Dubbeld   | `jade.dubbeld@student.uva.nl`  | [jygdub](https://github.com/jygdub)         |
  | Noah Knijff    |                                | [noahknijff](https://github.com/noahknijf)  |
  | Jonathan Meeng |                                | [JMeeng](https://github.com/JMeeng)         |
  | River Vaudrin  | `river.vaudrin@student.uva.nl` | [aM0NKE](https://github.com/aM0NKE)         |
