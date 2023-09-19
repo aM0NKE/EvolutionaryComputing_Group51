@@ -20,7 +20,7 @@ def parse_arguments():
 	parser = argparse.ArgumentParser(description="Your script description here")
 
 	# Add input arguments
-	parser.add_argument('-e', '--enemy', type=int, help='Integer value between 1 and 8', default=8)
+	parser.add_argument('-e', '--enemy', type=int, help='Integer value between 1 and 8', default=1)
 	parser.add_argument('-n', '--n_hidden_neurons', type=int, help='Integer value', default=10)
 
 	return parser.parse_args()

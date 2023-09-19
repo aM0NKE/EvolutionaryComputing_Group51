@@ -46,11 +46,11 @@ def plot_fitness(show, experiment_name, data, all_mean_fit, all_std_fit, all_max
     plt.fill_between(data.index, min_max_fit, max_max_fit, alpha=0.2, color='red')
 
     # Show plot
-    plt.title('Genetic v. Enemy ' + experiment_name.split('_')[-1][0])
+    plt.title('NEAT v. Enemy ' + experiment_name.split('_')[-1][0])
     plt.xlabel('Generation')
     plt.ylabel('Fitness')
     plt.grid(True)
-    plt.legend(loc='lower right')
+    plt.legend()
 
     if show: plt.show()
     else:
@@ -77,11 +77,11 @@ def plot_gain(show, experiment_name, data, all_mean_gain, all_std_gain, all_max_
     plt.fill_between(data.index, min_max_gain, max_max_gain, alpha=0.2, color='red')
 
     # Show plot
-    plt.title('Genetic v. Enemy ' + experiment_name.split('_')[-1][0])
+    plt.title('NEAT v. Enemy ' + experiment_name.split('_')[-1][0])
     plt.xlabel('Generation')
     plt.ylabel('Gain')
     plt.grid(True)
-    plt.legend(loc='lower right')
+    plt.legend()
 
     if show: plt.show()
     else:
@@ -119,10 +119,10 @@ def boxplot(show, experiment_name, runs, enemy, n_hidden_neurons):
             gains.append(gain)
             
     # Draw boxplot
-    plt.boxplot(gains, labels=['Genetic Algorithm'])
+    plt.boxplot(gains, labels=['NEAT'])
     plt.xlabel('Approach')
     plt.ylabel('Gain')
-    plt.title('Genetic v. Enemy ' + experiment_name.split('_')[-1][0])
+    plt.title('NEAT v. Enemy ' + experiment_name.split('_')[-1][0])
 
     if show: plt.show()
     else:

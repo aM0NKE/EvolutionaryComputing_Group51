@@ -34,7 +34,7 @@ class GeneticOptimization(object):
         experiment_name (str): The name of the experiment to be run.
     """
 
-    def __init__(self, env, experiment_name, n_hidden_neurons=10, dom_u=1, dom_l=-1, npop=100, gens=25, selection_prob=0.2, crossover_prob=0.2, mutation_prob=0.2):
+    def __init__(self, env, experiment_name, n_hidden_neurons=10, dom_u=1, dom_l=-1, npop=100, gens=25, selection_prob=0.2, crossover_prob=0.2, mutation_prob=0.2, gamma=0.9, alpha=0.1):
         """
             Initializes the Genetic Algorithm.
             
@@ -65,12 +65,19 @@ class GeneticOptimization(object):
         self.selection_prob = selection_prob
         self.crossover_prob = crossover_prob
         self.mutation_prob = mutation_prob
+        self.gamma = gamma
+        self.alpha = alpha
 
         # Keep track of the population and fitness
         self.pop = None
         self.fit_pop = None
         self.gain_pop = None
-        self.last_best = 0
+        self.best_fit = -100
+        self.best_gain = -100
+
+    def fitness_function(self, enemylife, playerlife, time):
+        return self.gamma * (100 - enemylife) + self.alpha * playerlife - np.log(time)
+
 
     def initialize_population(self):
         """
@@ -92,7 +99,7 @@ class GeneticOptimization(object):
         for p in self.pop:
             fitness, player_hp, enemy_hp, time = self.env.play(pcont=p)
             gain = player_hp - enemy_hp
-            self.fit_pop.append(fitness)
+            self.fit_pop.append(self.fitness_function(enemy_hp, player_hp, time))
             self.gain_pop.append(gain)
 
     def selection(self):
@@ -133,7 +140,7 @@ class GeneticOptimization(object):
         
         return np.array(offspring)
     
-    def mutation(self):
+    def mutation(self, offspring):
         """
         Apply mutation to the population.
         """
@@ -192,7 +199,10 @@ class GeneticOptimization(object):
             file_aux.write(str(i))
         
         # Save file with the best solution
-        np.savetxt(self.experiment_name+'/best_solution.txt', self.pop[best_fit])
+        if self.fit_pop[best_fit] > self.best_fit:
+            self.best_fit = self.fit_pop[best_fit]
+            self.best_gain = self.gain_pop[best_gain]
+            np.savetxt(self.experiment_name+'/best_solution.txt', self.pop[best_fit])
 
         # Saves simulation state
         solutions = [self.pop, self.fit_pop]
@@ -214,7 +224,7 @@ class GeneticOptimization(object):
             offspring = self.crossover(parents)
 
             # Mutation
-            self.mutation()
+            # self.mutation(offspring)
 
             # Update population and fitness
             self.update_population(parents, offspring)

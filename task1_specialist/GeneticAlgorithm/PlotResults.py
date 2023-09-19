@@ -21,7 +21,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Your script description here")
 
     # Add input arguments
-    parser.add_argument('-e', '--experiment_name', type=str, help='Directory to experiment')
+    parser.add_argument('-e', '--experiment_name', type=str, help='Directory to experiment', default='genetic_v_enemy_1')
     parser.add_argument('-s', '--show', type=bool, help='Show plots', default=False)
     return parser.parse_args()
 
@@ -86,14 +86,15 @@ def plot_gain(show, experiment_name, data, all_mean_gain, all_std_gain, all_max_
     else:
         # Save plot
         plt.savefig(experiment_name + '/gain_plot.png')
-    
-def boxplot(show, experiment_name, runs, enemy, n_hidden_neurons):
+
+def boxplot(show, experiment_name, enemy, n_hidden_neurons, runs):
     # Define figure
     plt.figure()
 
     gains = []
     trials = glob.glob(experiment_name + '/trial*')
-    for t in trials:
+    for i, t in enumerate(trials):
+        gains.append([])
         for _ in range(runs):
 
             # Initialize environment
@@ -114,10 +115,10 @@ def boxplot(show, experiment_name, runs, enemy, n_hidden_neurons):
 
             # Calculate gain
             gain = player_hp - enemy_hp 
-            gains.append(gain)
+            gains[i].append(gain)
             
     # Draw boxplot
-    plt.boxplot(gains, labels=['Genetic Algorithm'])
+    plt.boxplot([sum(g)/len(g) for g in gains], labels=['Genetic Algorithm'])
     plt.xlabel('Approach')
     plt.ylabel('Gain')
     plt.title('Genetic v. Enemy ' + experiment_name.split('_')[-1][0])
@@ -153,7 +154,7 @@ if __name__ == "__main__":
         all_std_gain.append(data['std_gain'])
         all_max_gain.append(data['max_gain'])
 
-    boxplot(args.show, args.experiment_name, 10, enemy, 10)
+    boxplot(args.show, args.experiment_name, enemy, 10, 5)
     plot_fitness(args.show, args.experiment_name, data, all_mean_fit, all_std_fit, all_max_fit)
     plot_gain(args.show, args.experiment_name, data, all_mean_gain, all_std_gain, all_max_gain)
 
