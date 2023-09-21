@@ -5,6 +5,7 @@ from Controller import PlayerController
 # Import libs
 import argparse
 import glob
+import re
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,11 +22,11 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Your script description here")
 
     # Add input arguments
-    parser.add_argument('-e', '--experiment_name', type=str, help='Directory to experiment', default='genetic_v_enemy_1')
-    parser.add_argument('-s', '--show', type=bool, help='Show plots', default=False)
+    parser.add_argument('-e', '--experiment_name', type=str, help='Directory to experiment')
+    parser.add_argument('-s', '--show', action='store_true', help='Show plots')
     return parser.parse_args()
 
-def plot_fitness(show, experiment_name, data, all_mean_fit, all_std_fit, all_max_fit):
+def plot_fitness(show, experiment_name, enemy, data, all_mean_fit, all_std_fit, all_max_fit):
     # Define figure
     plt.figure()
 
@@ -45,18 +46,19 @@ def plot_fitness(show, experiment_name, data, all_mean_fit, all_std_fit, all_max
     plt.fill_between(data['gen'], min_max_fit, max_max_fit, alpha=0.2, color='red')
 
     # Show plot
-    plt.title('Genetic v. Enemy ' + experiment_name.split('_')[-1][0])
+    plt.title('Genetic v. Enemy ' + str(enemy))
     plt.xlabel('Generation')
     plt.ylabel('Fitness')
     plt.grid(True)
     plt.legend(loc='lower right')
 
-    if show: plt.show()
+    if show: 
+        plt.show()
     else:
         # Save plot
         plt.savefig(experiment_name + '/fitness_plot.png')
 
-def plot_gain(show, experiment_name, data, all_mean_gain, all_std_gain, all_max_gain):
+def plot_gain(show, experiment_name, enemy, data, all_mean_gain, all_std_gain, all_max_gain):
     # Define figure
     plt.figure()
     
@@ -76,13 +78,14 @@ def plot_gain(show, experiment_name, data, all_mean_gain, all_std_gain, all_max_
     plt.fill_between(data['gen'], min_max_gain, max_max_gain, alpha=0.2, color='red')
 
     # Show plot
-    plt.title('Genetic v. Enemy ' + experiment_name.split('_')[-1][0])
+    plt.title('Genetic v. Enemy ' + str(enemy))
     plt.xlabel('Generation')
     plt.ylabel('Gain')
     plt.grid(True)
     plt.legend(loc='lower right')
 
-    if show: plt.show()
+    if show: 
+        plt.show()
     else:
         # Save plot
         plt.savefig(experiment_name + '/gain_plot.png')
@@ -121,9 +124,10 @@ def boxplot(show, experiment_name, enemy, n_hidden_neurons, runs):
     plt.boxplot([sum(g)/len(g) for g in gains], labels=['Genetic Algorithm'])
     plt.xlabel('Approach')
     plt.ylabel('Gain')
-    plt.title('Genetic v. Enemy ' + experiment_name.split('_')[-1][0])
+    plt.title('Genetic v. Enemy ' + str(enemy))
 
-    if show: plt.show()
+    if show: 
+        plt.show()
     else:
         # Save plot
         plt.savefig(experiment_name + '/boxplot.png')
@@ -133,7 +137,7 @@ if __name__ == "__main__":
 
     # Parse input arguments
     args = parse_arguments()
-    enemy = args.experiment_name.split('_')[-1][0]
+    enemy = re.search(r'enemy_(\d+)', args.experiment_name).group(1)
 
     all_mean_fit = []
     all_std_fit = []
@@ -155,8 +159,8 @@ if __name__ == "__main__":
         all_max_gain.append(data['max_gain'])
 
     boxplot(args.show, args.experiment_name, enemy, 10, 5)
-    plot_fitness(args.show, args.experiment_name, data, all_mean_fit, all_std_fit, all_max_fit)
-    plot_gain(args.show, args.experiment_name, data, all_mean_gain, all_std_gain, all_max_gain)
+    plot_fitness(args.show, args.experiment_name, enemy, data, all_mean_fit, all_std_fit, all_max_fit)
+    plot_gain(args.show, args.experiment_name, enemy, data, all_mean_gain, all_std_gain, all_max_gain)
 
     # Use this function to perform a t-test between two approaches
     # stats.ttest_ind(a, b)

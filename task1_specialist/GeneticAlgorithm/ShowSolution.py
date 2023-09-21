@@ -4,9 +4,10 @@ from evoman.environment import Environment
 from Controller import PlayerController
 
 # Import other libs
-import numpy as np
 import argparse
 import glob
+import re
+import numpy as np
 import pandas as pd
 
 def parse_arguments():
@@ -20,7 +21,7 @@ def parse_arguments():
 	parser = argparse.ArgumentParser(description="Your script description here")
 
 	# Add input arguments
-	parser.add_argument('-e', '--enemy', type=int, help='Integer value between 1 and 8', default=1)
+	parser.add_argument('-e', '--experiment_name', type=str, help='Directory to experiment')
 	parser.add_argument('-n', '--n_hidden_neurons', type=int, help='Integer value', default=10)
 
 	return parser.parse_args()
@@ -53,16 +54,14 @@ if __name__ == "__main__":
 
 	# Parse input arguments
 	args = parse_arguments()
-	
-	# Set experiment name
-	experiment_name = 'genetic_v_enemy_' + str(args.enemy)
+	enemy = re.search(r'enemy_(\d+)', args.experiment_name).group(1)
 
 	# Find best solution
-	best_solution_trial_name = find_best_solution(experiment_name)
+	best_solution_trial_name = find_best_solution(args.experiment_name)
 
 	# Initialize environment for single objective mode (specialist)  with static enemy and ai player
 	env = Environment(experiment_name=best_solution_trial_name,
-					enemies=[args.enemy],
+					enemies=[enemy],
 					playermode="ai",
 					player_controller=PlayerController(args.n_hidden_neurons),
 					speed="normal",
@@ -71,6 +70,6 @@ if __name__ == "__main__":
 					visuals=True)
 
 	# Load specialist controller
-	sol = np.loadtxt(best_solution_trial_name+'/best_solution.txt')
-	print('\n LOADING SAVED SPECIALIST SOLUTION FOR ENEMY '+str(args.enemy)+' \n')
+	sol = np.loadtxt(best_solution_trial_name + '/best_solution.txt')
+	print('\nLOADING SAVED SPECIALIST SOLUTION FOR ENEMY ' + str(enemy) + ' \n')
 	env.play(sol)

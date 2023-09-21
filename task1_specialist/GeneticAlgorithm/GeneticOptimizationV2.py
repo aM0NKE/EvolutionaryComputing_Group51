@@ -73,11 +73,9 @@ class GeneticOptimization(object):
         self.fit_pop = None
         self.gain_pop = None
         self.best_fit = -100
-        self.best_gain = -100
 
     def fitness_function(self, enemylife, playerlife, time):
         return self.gamma * (100 - enemylife) + self.alpha * playerlife - np.log(time)
-
 
     def initialize_population(self):
         """
@@ -201,13 +199,12 @@ class GeneticOptimization(object):
         # Save file with the best solution
         if self.fit_pop[best_fit] > self.best_fit:
             self.best_fit = self.fit_pop[best_fit]
-            self.best_gain = self.gain_pop[best_gain]
             np.savetxt(self.experiment_name+'/best_solution.txt', self.pop[best_fit])
 
         # Saves simulation state
         solutions = [self.pop, self.fit_pop]
         self.env.update_solutions(solutions)
-        self.env.save_state()
+        self.env.save_state()        
 
     def run(self):
         """
