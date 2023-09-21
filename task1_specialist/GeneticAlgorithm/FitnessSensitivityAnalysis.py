@@ -142,8 +142,8 @@ if __name__ == "__main__":
                     n_hidden_neurons = args.n_hidden_neurons
                     dom_u = 1
                     dom_l = -1
-                    npop = 10
-                    gens = 1
+                    npop = 100
+                    gens = 20
                     selection_prob = 0.2
                     crossover_prob = 0.2
                     mutation_prob = 0.2
