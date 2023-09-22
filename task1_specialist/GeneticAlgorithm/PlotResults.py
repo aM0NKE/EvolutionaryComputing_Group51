@@ -23,10 +23,10 @@ def parse_arguments():
 
     # Add input arguments
     parser.add_argument('-e', '--experiment_name', type=str, help='Directory to experiment')
-    parser.add_argument('-s', '--show', action='store_true', help='Show plots')
+    parser.add_argument('-s', '--save', action='store_true', help='Save plots')
     return parser.parse_args()
 
-def plot_fitness(show, experiment_name, enemy, data, all_mean_fit, all_std_fit, all_max_fit):
+def plot_fitness(save, experiment_name, enemy, data, all_mean_fit, all_std_fit, all_max_fit):
     # Define figure
     plt.figure()
 
@@ -52,13 +52,14 @@ def plot_fitness(show, experiment_name, enemy, data, all_mean_fit, all_std_fit, 
     plt.grid(True)
     plt.legend(loc='lower right')
 
-    if show: 
-        plt.show()
-    else:
+    if save: 
         # Save plot
         plt.savefig(experiment_name + '/fitness_plot.png')
+    else:
+        plt.show()
 
-def plot_gain(show, experiment_name, enemy, data, all_mean_gain, all_std_gain, all_max_gain):
+
+def plot_gain(save, experiment_name, enemy, data, all_mean_gain, all_std_gain, all_max_gain):
     # Define figure
     plt.figure()
     
@@ -84,53 +85,55 @@ def plot_gain(show, experiment_name, enemy, data, all_mean_gain, all_std_gain, a
     plt.grid(True)
     plt.legend(loc='lower right')
 
-    if show: 
-        plt.show()
-    else:
+    if save: 
         # Save plot
         plt.savefig(experiment_name + '/gain_plot.png')
+    else:
+        plt.show()
 
-def boxplot(show, experiment_name, enemy, n_hidden_neurons, runs):
+def boxplot(save, experiment_name, enemy, n_hidden_neurons, runs):
     # Define figure
     plt.figure()
 
-    gains = []
+    gains, accs = [], []
     trials = glob.glob(experiment_name + '/trial*')
-    for i, t in enumerate(trials):
-        gains.append([])
-        for _ in range(runs):
+    for t in trials:
+        # Initialize environment
+        env = Environment(experiment_name=t,
+                        enemies=[enemy],
+                        playermode="ai",
+                        player_controller=PlayerController(n_hidden_neurons),
+                        enemymode="static",
+                        level=2,
+                        speed="fastest",
+                        visuals=False)
+                    
+        # Load best solution
+        best_solution = np.loadtxt(t + '/best_solution.txt')
 
-            # Initialize environment
-            env = Environment(experiment_name=t,
-                            enemies=[enemy],
-                            playermode="ai",
-                            player_controller=PlayerController(n_hidden_neurons),
-                            enemymode="static",
-                            level=2,
-                            speed="fastest",
-                            visuals=False)
-            
-            # Load best solution
-            best_solution = np.loadtxt(t + '/best_solution.txt')
+        # Play game
+        fitness, player_hp, enemy_hp, time = env.play(pcont=best_solution)
 
-            # Play game
-            fitness, player_hp, enemy_hp, time = env.play(pcont=best_solution)
+        # Calculate accuracy
+        accuracy = (100-enemy_hp)/env.player_controller.shot_cnt
+        accs.append(accuracy)
+        print("Damage per shot: ", accuracy)
 
-            # Calculate gain
-            gain = player_hp - enemy_hp 
-            gains[i].append(gain)
+        # Calculate gain
+        gain = player_hp - enemy_hp 
+        gains.append(gain)
             
     # Draw boxplot
-    plt.boxplot([sum(g)/len(g) for g in gains], labels=['Genetic Algorithm'])
+    plt.boxplot(gains, labels=['Gain'])
     plt.xlabel('Approach')
     plt.ylabel('Gain')
     plt.title('Genetic v. Enemy ' + str(enemy))
 
-    if show: 
-        plt.show()
+    if save: 
+        plt.savefig(experiment_name + '/boxplot.png')
     else:
         # Save plot
-        plt.savefig(experiment_name + '/boxplot.png')
+        plt.show()
     
 
 if __name__ == "__main__":
@@ -158,9 +161,10 @@ if __name__ == "__main__":
         all_std_gain.append(data['std_gain'])
         all_max_gain.append(data['max_gain'])
 
-    boxplot(args.show, args.experiment_name, enemy, 10, 5)
-    plot_fitness(args.show, args.experiment_name, enemy, data, all_mean_fit, all_std_fit, all_max_fit)
-    plot_gain(args.show, args.experiment_name, enemy, data, all_mean_gain, all_std_gain, all_max_gain)
+    # damage_shot(args.show, args.experiment_name, enemy, 10, 5)
+    boxplot(args.save, args.experiment_name, enemy, 10, 5)
+    plot_fitness(args.save, args.experiment_name, enemy, data, all_mean_fit, all_std_fit, all_max_fit)
+    plot_gain(args.save, args.experiment_name, enemy, data, all_mean_gain, all_std_gain, all_max_gain)
 
     # Use this function to perform a t-test between two approaches
     # stats.ttest_ind(a, b)

@@ -16,6 +16,7 @@ def sigmoid_activation(x):
 class PlayerController(Controller):
 	def __init__(self, _n_hidden):
 		self.n_hidden = [_n_hidden]
+		self.shot_cnt = 0
 
 	def set(self,controller, n_inputs):
 		# Number of hidden neurons
@@ -71,6 +72,7 @@ class PlayerController(Controller):
 			jump = 0
 
 		if output[3] > 0.5:
+			self.shot_cnt += 1
 			shoot = 1
 		else:
 			shoot = 0
