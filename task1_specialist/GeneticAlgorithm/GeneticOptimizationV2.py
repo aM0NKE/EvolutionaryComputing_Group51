@@ -42,14 +42,14 @@ class GeneticOptimization(object):
     def __init__(self, env, experiment_name, 
                  n_hidden_neurons=10, 
                  dom_u=1, dom_l=-1, 
-                 n_pop=100, 
+                 n_pop=75, 
                  generations=15, 
                  gamma=0.9, 
                  alpha=0.1,
                  selection_lambda=25,
                  selection_k=4,
                  crossover_alpha=0.5,
-                 mutation_rate=0.2):
+                 mutation_rate=0.33):
         """
             Initializes the Genetic Algorithm.
             
@@ -75,6 +75,7 @@ class GeneticOptimization(object):
         self.generations = generations
         self.no_improvement_gens = 0
         self.best_fitness = float('-inf')
+        self.fitness_values = []
         
         # Fitness func weights
         self.gamma = gamma
@@ -128,9 +129,9 @@ class GeneticOptimization(object):
             tournament_indices = np.random.choice(self.n_pop, size=self.selection_k, replace=False)
             tournament = self.pop[tournament_indices]
             # Evaluate fitness of individuals in tournament
-            fitness_values = [self._evaluate_solution(individual) for individual in tournament]
+            self.fitness_values = [self._evaluate_solution(individual) for individual in tournament]
             # Select best individual
-            best_index = np.argmax(fitness_values)
+            best_index = np.argmax(self.fitness_values)
             selected_parents.append(tournament[best_index])
         return selected_parents
     
@@ -177,15 +178,15 @@ class GeneticOptimization(object):
         # Add children to population
         self.pop = np.vstack((self.pop, np.array(children)))
         # Rank population
-        fitness_values = [self._evaluate_solution(individual) for individual in self.pop]
-        sorted_indices = np.argsort(fitness_values)[::-1]
+        self.fitness_values = [self._evaluate_solution(individual) for individual in self.pop]
+        sorted_indices = np.argsort(self.fitness_values)[::-1]
         # Remove worst individuals
         self.pop = self.pop[sorted_indices][:self.n_pop]
 
         # Print/Save stats
-        mean_fit = np.mean(fitness_values)
-        std_fit  =  np.std(fitness_values)
-        max_fit = np.max(fitness_values)
+        mean_fit = np.mean(self.fitness_values)
+        std_fit  =  np.std(self.fitness_values)
+        max_fit = np.max(self.fitness_values)
         print("Fitness Mean: {}, Std: {} Max: {}".format(mean_fit, std_fit, max_fit))
         with open(os.path.join(self.experiment_name, 'optimization_logs.txt'), 'a') as file_aux:
             if gen == 1: 
