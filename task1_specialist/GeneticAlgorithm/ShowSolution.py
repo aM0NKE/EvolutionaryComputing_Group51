@@ -41,7 +41,7 @@ def find_best_solution(experiment_name):
 	for t in trials:
 		# Find the best solution for each trial
 		data = pd.read_csv(t + '/optimization_logs.txt', sep='\s+', header=0)
-		current_solution = max(data['max_gain'])
+		current_solution = max(data['max_fit'])
 
 		# Check if current solution is better than the best solution
 		if current_solution > best_solution_gain:

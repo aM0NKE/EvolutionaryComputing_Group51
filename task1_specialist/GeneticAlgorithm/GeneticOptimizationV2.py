@@ -6,17 +6,13 @@
 
 # Import framework
 import sys 
+import glob, os
 from evoman.environment import Environment
 from Controller import PlayerController
 
 # Import other libs
-import time
 import numpy as np
-from math import fabs,sqrt
-import glob, os
-import argparse
-from tabulate import tabulate
-
+import random
 
 #########################################################################################
 #                                [THE GENETIC ALGORITHM]                                #
@@ -29,202 +25,197 @@ class GeneticOptimization(object):
 
     Args:
         env (Environment): The Evoman game environment to be used.
-        mode (str): The mode to run the simulation in. Either 'train' or 'test'.
-        n_hidden_neurons (int): The number of hidden neurons in the neural network.
         experiment_name (str): The name of the experiment to be run.
+        n_hidden_neurons (int): The number of hidden neurons in the neural network.
+        dom_u (int): The upper limit for weights and biases.
+        dom_l (int): The lower limit for weights and biases.
+        n_pop (int): The population size.
+        generations (int): The max number of generations.
+        gamma (float): Fitness func. weight for the enemy damage.
+        alpha (float): The weight for the player damage.
+        selection_lambda (int): The number of parents to select.
+        selection_k (int): The number of individuals to select for the tournament.
+        crossover_alpha (float): The crossover parameter.
+        mutation_rate (float): Percentage of genes to mustate.
     """
 
-    def __init__(self, env, experiment_name, n_hidden_neurons=10, dom_u=1, dom_l=-1, npop=100, gens=25, selection_prob=0.2, crossover_prob=0.2, mutation_prob=0.2, gamma=0.9, alpha=0.1):
+    def __init__(self, env, experiment_name, 
+                 n_hidden_neurons=10, 
+                 dom_u=1, dom_l=-1, 
+                 n_pop=100, 
+                 generations=15, 
+                 gamma=0.9, 
+                 alpha=0.1,
+                 selection_lambda=25,
+                 selection_k=4,
+                 crossover_alpha=0.5,
+                 mutation_rate=0.2):
         """
             Initializes the Genetic Algorithm.
             
-            Args:
-                env (Environment): The Evoman game environment to be used.
-                experiment_name (str): The name of the experiment to be run.
-                n_hidden_neurons (int): The number of hidden neurons in the neural network.
+            Attributes:
                 n_vars (int): The number of variables in the neural network.
-                dom_u (int): The upper limit for weights and biases.
-                dom_l (int): The lower limit for weights and biases.
-                npop (int): The population size.
-                gens (int): The number of generations.
-                selection_prob (float): The probability of selecting an individual for reproduction.
-                crossover_prob (float): The probability of performing crossover on the parents.
-                mutation_prob (float): The probability of performing mutation on the offspring.
+                pop (np.array): The population of individuals.
+                no_improvement_gens (int): The number of generations without improvement.
+                best_fitness (float): The best fitness found so far.
         """
         # Initialize input arguments
         self.env = env
         self.experiment_name = experiment_name
 
-        # Initialize genetic algorithm parameters
-        self.n_hidden_neurons = n_hidden_neurons
-        self.n_vars = (self.env.get_num_sensors() + 1) * n_hidden_neurons + (n_hidden_neurons + 1) * 5
+        # Initialize Population
+        self.n_pop = n_pop
         self.dom_u = dom_u
         self.dom_l = dom_l
-        self.npop = npop
-        self.gens = gens
-        self.selection_prob = selection_prob
-        self.crossover_prob = crossover_prob
-        self.mutation_prob = mutation_prob
+        self.n_hidden_neurons = n_hidden_neurons
+        self.n_vars = (self.env.get_num_sensors() + 1) * n_hidden_neurons + (n_hidden_neurons + 1) * 5
+        self.pop = np.random.uniform(self.dom_l, self.dom_u, (self.n_pop, self.n_vars))
+
+        # Generation params
+        self.generations = generations
+        self.no_improvement_gens = 0
+        self.best_fitness = float('-inf')
+        
+        # Fitness func weights
         self.gamma = gamma
         self.alpha = alpha
+        
+        # Selection params
+        self.selection_lambda = selection_lambda
+        self.selection_k = selection_k
+        
+        # Crossover param
+        self.crossover_alpha = crossover_alpha
+        
+        # Mutation param
+        self.mutation_rate = mutation_rate
 
-        # Keep track of the population and fitness
-        self.pop = None
-        self.fit_pop = None
-        self.gain_pop = None
-        self.best_fit = -100
+    def _fitness_function(self, enemylife, playerlife, time):
+        """
+            Calculates the fitness value for an individual solution.
 
-    def fitness_function(self, enemylife, playerlife, time):
+            Args:
+                enemylife (float): The enemy's life.
+                playerlife (float): The player's life.
+                time (float): The time it took to finish the game.
+        """
         return self.gamma * (100 - enemylife) + self.alpha * playerlife - np.log(time)
 
-    def initialize_population(self):
+    def _evaluate_solution(self, solution):
         """
-            Initializes the population from scratch or loads from previous state.
-        """
-        print("Optimizing from scratch.")
-        # Initialize population
-        self.pop = np.random.uniform(self.dom_l, self.dom_u, (self.npop, self.n_vars))
-        # Evaluate fitness
-        self.evaluate_population()
-        # Save initial state
-        self.save_results(0)
-
-    def evaluate_population(self):
-        """
-            Evaluates the fitness of each individual in the population.
-        """
-        self.fit_pop, self.gain_pop = [], []
-        for p in self.pop:
-            fitness, player_hp, enemy_hp, time = self.env.play(pcont=p)
-            gain = player_hp - enemy_hp
-            self.fit_pop.append(self.fitness_function(enemy_hp, player_hp, time))
-            self.gain_pop.append(gain)
-
-    def selection(self):
-        """
-            Selects parents for reproduction using tournament selection.
-        """
-        num_parents = int(self.npop * self.selection_prob)
-        parents = []
-        
-        for _ in range(num_parents):
-            # Randomly select two individuals for the tournament
-            p1, p2 = np.random.choice(self.npop, size=2, replace=False)
-            # Select the best individual
-            if self.fit_pop[p1] > self.fit_pop[p2]:
-                parents.append(self.pop[p1])
-            else:
-                parents.append(self.pop[p2])
-        
-        return np.array(parents)
-    
-    def crossover(self, parents):
-        """
-            Performs crossover on the parents to create offspring.
+            Evaluates the fitness value of an individual solution.
 
             Args:
-                parents (np.array): The parents to perform crossover on.
+                solution (np.array): The individual solution to be evaluated.
+
+            Note: 
+                I think this is neccesary if you want to use your own fitness function. (River)
         """
-        num_offspring = self.npop - int(self.npop * self.crossover_prob)
-        offspring = []
-        
-        for _ in range(num_offspring):
-            # Select two random parents
-            p1, p2 = np.random.randint(0, len(parents), 2)
-            # Select a random crossover point
-            cross_point = np.random.randint(0, self.n_vars)
-            # Create offspring
-            offspring.append(np.concatenate((parents[p1][:cross_point], parents[p2][cross_point:])))
-        
-        return np.array(offspring)
+        fitness, player_hp, enemy_hp, time = self.env.play(pcont=solution)
+        return self._fitness_function(enemy_hp, player_hp, time)
     
-    def mutation(self, offspring):
+    def _tournament_selection(self):
         """
-        Apply mutation to the population.
-        """
-        num_mutations = int(self.npop * self.n_vars * self.mutation_prob)
-        mutation_indices = np.random.choice(self.npop * self.n_vars, size=num_mutations, replace=False)
-        
-        for i in mutation_indices:
-            # Calculate the individual and gene index
-            individual_idx = i // self.n_vars
-            gene_idx = i % self.n_vars
-            # Mutate the gene
-            self.pop[individual_idx, gene_idx] = np.random.uniform(self.dom_l, self.dom_u)
+            Selects parents using tournament selection.
 
-    def update_population(self, parents, offspring):
+            Params:
+                selection_lambda (int): The number of parents to select.
+                selection_k (int): The number of individuals to select for the tournament.
         """
-            Updates the population with the new offspring.
+        selected_parents = []
+        for _ in range(self.selection_lambda):
+            # Select individuals for tournament
+            tournament_indices = np.random.choice(self.n_pop, size=self.selection_k, replace=False)
+            tournament = self.pop[tournament_indices]
+            # Evaluate fitness of individuals in tournament
+            fitness_values = [self._evaluate_solution(individual) for individual in tournament]
+            # Select best individual
+            best_index = np.argmax(fitness_values)
+            selected_parents.append(tournament[best_index])
+        return selected_parents
+    
+    def _blend_crossover(self, parents):
         """
-        self.pop[: len(parents)] = parents
-        self.pop[len(parents) :] = offspring
-        self.evaluate_population()
-
-    def save_results(self, i):
-        """
-            Saves the results of the current generation.
+            Performs Blend Crossover on two parents.
 
             Args:
-                i (int): The current generation number.
-                pop (list): The population.
-                fit_pop (list): The fitness scores of the population.            
+                parents (list): The parents to perform crossover on.
+            
+            Param:
+                crossover_alpha (float): The crossover parameter.
         """
-        # Find stats
-        best_fit = np.argmax(self.fit_pop)
-        mean_fit = np.mean(self.fit_pop)
-        std_fit  =  np.std(self.fit_pop)
-        best_gain = np.argmax(self.gain_pop)
-        mean_gain = np.mean(self.gain_pop)
-        std_gain = np.std(self.gain_pop)
+        gamma = (1 - 2 * self.crossover_alpha) * np.random.uniform(0, 1, size=self.n_vars) - self.crossover_alpha
+        parent1, parent2 = parents[0], parents[1]
+        child = (1 - gamma) * parent1 + gamma * parent2
+        return child
+    
+    def _nonuniform_mutation(self, child):
+        """
+            Performs Nonuniform Mutation on a child.
 
-        # Saves stats for current generation
+            Args:
+                child (np.array): The child to perform mutation on.
+        
+            Param:
+                mutation_rate (float): Percentage of genes to mustate.
+        """
+        mutated_child = np.copy(child)
+        # Select genes to mutate
+        mutation_mask = np.random.uniform(0, 1, size=self.n_vars) < self.mutation_rate
+        # Mutate genes
+        mutated_child[mutation_mask] += np.random.uniform(-0.1, 0.1, size=np.sum(mutation_mask))
+        return mutated_child
+    
+    def _replace_worst(self, gen, children):
+        """
+            Adds children to the population and removes the worst individuals.
+
+            Args:
+                gen (int): The current generation.
+                children (list): The children to be added to the population.
+        """
+        # Add children to population
+        self.pop = np.vstack((self.pop, np.array(children)))
+        # Rank population
+        fitness_values = [self._evaluate_solution(individual) for individual in self.pop]
+        sorted_indices = np.argsort(fitness_values)[::-1]
+        # Remove worst individuals
+        self.pop = self.pop[sorted_indices][:self.n_pop]
+
+        # Print/Save stats
+        mean_fit = np.mean(fitness_values)
+        std_fit  =  np.std(fitness_values)
+        max_fit = np.max(fitness_values)
+        print("Fitness Mean: {}, Std: {} Max: {}".format(mean_fit, std_fit, max_fit))
         with open(os.path.join(self.experiment_name, 'optimization_logs.txt'), 'a') as file_aux:
-            print('---------------------------------------------------------------------------------')
-            print('                             GENERATION: ' + str(i))
-            print('---------------------------------------------------------------------------------')
-            print(tabulate({"Mean Fitness": [round(mean_fit, 6)],
-                            "Std Fitness": [round(std_fit, 6)],
-                            "Max Fitness": [round(self.fit_pop[best_fit], 6)],
-                            "Mean Gain": [mean_gain],
-                            "Std Gain": [std_gain],
-                            "Max Gain": [self.gain_pop[best_gain]]},            
-                            headers="keys"))
-            if i == 0: file_aux.write('gen mean_fit std_fit max_fit mean_gain std_gain max_gain')
-            file_aux.write('\n' + str(i) + ' ' + str(round(mean_fit, 6)) + ' ' + str(round(std_fit, 6)) + ' ' + str(round(self.fit_pop[best_fit], 6)) + ' ' + str(round(mean_gain, 6)) + ' ' + str(round(std_gain, 6)) + ' ' + str(round(self.gain_pop[best_gain], 6)))
+            if gen == 1: 
+                file_aux.write('gen mean_fit std_fit max_fit')
+            else:       
+                file_aux.write('\n{} {} {} {}'.format(gen, str(round(mean_fit, 6)), str(round(std_fit, 6)), str(round(max_fit, 6))))
 
-        # Saves generation number
-        with open(os.path.join(self.experiment_name, 'gen.txt'), 'w') as file_aux:
-            file_aux.write(str(i))
-        
-        # Save file with the best solution
-        if self.fit_pop[best_fit] > self.best_fit:
-            self.best_fit = self.fit_pop[best_fit]
-            np.savetxt(self.experiment_name+'/best_solution.txt', self.pop[best_fit])
-
-        # Saves simulation state
-        solutions = [self.pop, self.fit_pop]
-        self.env.update_solutions(solutions)
-        self.env.save_state()        
-
-    def run(self):
+    def optimize(self):
         """
-            Runs the Genetic Algorithm.
+            Finds best solution for EvoMan.
         """
-        # Initialize population and fitness
-        self.initialize_population()
+        for gen in range(1, self.generations+1):
+            print("\nGeneration: {}".format(gen))
 
-        for gen in range(1, self.gens+1):
             # Select parents
-            parents = self.selection()
+            parents = self._tournament_selection()
 
-            # Crossover
-            offspring = self.crossover(parents)
+            # Generate children
+            children = [self._blend_crossover(random.sample(parents, 2)) for _ in range(self.selection_lambda)]
+            
+            # Mutate children
+            children = [self._nonuniform_mutation(child) for child in children]
+            
+            # Replacement
+            self._replace_worst(gen, children)
 
-            # Mutation
-            # self.mutation(offspring)
+            # Check if best solution has improved
+            current_best_fitness = self._evaluate_solution(self.pop[0])
+            if current_best_fitness > self.best_fitness:
+                np.savetxt(self.experiment_name+'/best_solution.txt', self.pop[0])
+                self.best_fitness = current_best_fitness
 
-            # Update population and fitness
-            self.update_population(parents, offspring)
-
-            # Save/print best individual
-            self.save_results(gen)
+        return self.pop[0], self.best_fitness

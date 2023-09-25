@@ -1,5 +1,7 @@
 # Import framework
 import sys 
+import glob, os
+import argparse
 from evoman.environment import Environment
 from Controller import PlayerController
 from GeneticOptimizationV2 import GeneticOptimization
@@ -7,9 +9,8 @@ from GeneticOptimizationV2 import GeneticOptimization
 # Import other libs
 import time
 import numpy as np
+import re
 from math import fabs,sqrt
-import glob, os
-import argparse
 
 def parse_arguments():
     """
@@ -25,10 +26,10 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Your script description here")
 
     # Add input arguments
-    parser.add_argument('-e', '--enemy', type=int, help='Integer value between 1 and 8', default=1)
+    parser.add_argument('-e', '--experiment_name', type=str, help='Directory to experiment')
     parser.add_argument('-n', '--n_hidden_neurons', type=int, help='Integer value', default=10)
     parser.add_argument('-t', '--trials', type=int, help='Integer value', default=10)
-    parser.add_argument('-g', '--gens', type=int, help='Integer value', default=20)
+    parser.add_argument('-g', '--gens', type=int, help='Integer value', default=15)
     parser.add_argument('-v', '--visuals', type=bool, help='Boolean value', default=False)
     return parser.parse_args()
 
@@ -53,13 +54,14 @@ if __name__ == "__main__":
 
     # Parse input arguments
     args = parse_arguments()
+    enemy = re.search(r'enemy_(\d+)', args.experiment_name).group(1)
+
 
     # Check whether to turn on visuals
     check_visuals(args.visuals)
 
     # Set experiment name
-    experiment_name = 'genetic_v_enemy_' + str(args.enemy)
-    mkdir_experiment(experiment_name)
+    mkdir_experiment(args.experiment_name)
 
     experiment_time = time.time()  # Sets time marker
 
@@ -70,11 +72,11 @@ if __name__ == "__main__":
         print('                               TRIAL: ' + str(t))
         print('---------------------------------------------------------------------------------')
         # Set trail name
-        trail_name = experiment_name + '/trial_' + str(t)
+        trail_name = args.experiment_name + '/trial_' + str(t)
         os.makedirs(trail_name)
         # Initialize game simulation in individual evolution mode, for single static enemy.
         env = Environment(experiment_name=trail_name,
-                        enemies=[args.enemy],
+                        enemies=[enemy],
                         playermode="ai",
                         player_controller=PlayerController(args.n_hidden_neurons),
                         enemymode="static",
@@ -86,18 +88,9 @@ if __name__ == "__main__":
                 
         trail_time = time.time()  # Sets time marker
         
-        # Set Genetic Algorithm parameters
-        n_hidden_neurons = args.n_hidden_neurons
-        dom_u = 1
-        dom_l = -1
-        npop = 100
-        gens = 20
-        selection_prob = 0.2
-        crossover_prob = 0.2
-        mutation_prob = 0.2
         # Run Genetic Algorithm
-        genetic = GeneticOptimization(env, trail_name, n_hidden_neurons, dom_u, dom_l, npop, gens, selection_prob, crossover_prob, mutation_prob)
-        genetic.run()
+        genetic = GeneticOptimization(env, trail_name)
+        best_solution, best_fitness = genetic.optimize()
 
         print('---------------------------------------------------------------------------------')
         print('TRIAL ' + str(t) + ' COMPLETED!')
