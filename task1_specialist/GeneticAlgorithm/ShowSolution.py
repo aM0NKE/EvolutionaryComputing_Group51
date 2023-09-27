@@ -23,7 +23,6 @@ def parse_arguments():
 	# Add input arguments
 	parser.add_argument('-e', '--experiment_name', type=str, help='Directory to experiment')
 	parser.add_argument('-n', '--n_hidden_neurons', type=int, help='Integer value', default=10)
-
 	return parser.parse_args()
 
 def find_best_solution(experiment_name):

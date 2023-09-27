@@ -27,6 +27,11 @@ def parse_arguments():
     return parser.parse_args()
 
 def plot_fitness(save, experiment_name, enemy, all_gens, all_mean_fit, all_std_fit, all_max_fit):
+    
+    # Get gamma and alpha values from experiment name (e.g. enemy_1/gamma_0.5/alpha_0.5)
+    gamma = re.search(r'gamma_(\d+.\d+)', experiment_name).group(1)
+    alpha = re.search(r'alpha_(\d+.\d+)', experiment_name).group(1)
+    
     # Define figure
     plt.figure()
 
@@ -35,8 +40,6 @@ def plot_fitness(save, experiment_name, enemy, all_gens, all_mean_fit, all_std_f
     avg_mean_fit = [sum(x)/len(x) for x in zip(*all_mean_fit)]
     max_mean_fit = [max(x) for x in zip(*all_mean_fit)]
 
-    avg_std_fit = [sum(x)/len(x) for x in zip(*all_std_fit)]
-
     min_max_fit = [min(x) for x in zip(*all_max_fit)]
     avg_max_fit = [sum(x)/len(x) for x in zip(*all_max_fit)]
     max_max_fit = [max(x) for x in zip(*all_max_fit)]
@@ -44,12 +47,11 @@ def plot_fitness(save, experiment_name, enemy, all_gens, all_mean_fit, all_std_f
     # Draw lines
     plt.plot(all_gens[0], avg_mean_fit, marker='o', linestyle='-', label='Avg. Mean Fitness', color='blue')
     plt.fill_between(all_gens[0], min_mean_fit, max_mean_fit, alpha=0.2, color='blue')
-    # plt.fill_between(all_gens[0], [x-y for x, y in zip(avg_mean_fit,avg_std_fit)], [x+y for x, y in zip(avg_mean_fit,avg_std_fit)], alpha=0.2, color='blue')
     plt.plot(all_gens[0], avg_max_fit, marker='o', linestyle='-', label='Avg. Max Fitness', color='red')
     plt.fill_between(all_gens[0], min_max_fit, max_max_fit, alpha=0.2, color='red')
 
     # Show plot
-    plt.title('Genetic v. Enemy ' + str(enemy))
+    plt.title(f'gamma={gamma}/alpha={alpha} (enemy={enemy})')
     plt.xlabel('Generation')
     plt.ylabel('Fitness')
     plt.grid(True)
@@ -62,10 +64,13 @@ def plot_fitness(save, experiment_name, enemy, all_gens, all_mean_fit, all_std_f
         plt.show()
 
 def boxplot(save, experiment_name, enemy, n_hidden_neurons, runs):
-    # Define figure
-    plt.figure()
+     # Get gamma and alpha values from experiment name (e.g. enemy_1/gamma_0.5/alpha_0.5)
+    gamma = re.search(r'gamma_(\d+.\d+)', experiment_name).group(1)
+    alpha = re.search(r'alpha_(\d+.\d+)', experiment_name).group(1)
 
-    gains, accs = [], []
+    # Get data for plotting
+    phps, ehps, gains, times, = [], [], [], []
+    lefts, rights, jumps, shots, accs, releases = [], [], [], [], [], []
     trials = glob.glob(experiment_name + '/trial*')
     for t in trials:
         # Initialize environment
@@ -81,22 +86,35 @@ def boxplot(save, experiment_name, enemy, n_hidden_neurons, runs):
         # Load best solution
         best_solution = np.loadtxt(t + '/best_solution.txt')
 
-        # Play game
-        fitness, player_hp, enemy_hp, time = env.play(pcont=best_solution)
+        # Play game runs times
+        for i in range(runs):
+            # Play game
+            fitness, player_hp, enemy_hp, time = env.play(pcont=best_solution)
 
-        # Calculate accuracy
-        accuracy = (100-enemy_hp)/env.player_controller.shot_cnt
-        accs.append(accuracy)
+            phps.append(round(player_hp, 2))
+            ehps.append(round(enemy_hp, 2))
+            # Calculate gain
+            gain = player_hp - enemy_hp 
+            gains.append(round(gain, 2))
+            times.append(time)
 
-        # Calculate gain
-        gain = player_hp - enemy_hp 
-        gains.append(gain)
+            lefts.append(env.player_controller.lefts)
+            rights.append(env.player_controller.rights)
+            jumps.append(env.player_controller.jumps)
+            shots.append(env.player_controller.shot_cnt)
+            releases.append(env.player_controller.releases)
+            # Calculate accuracy
+            accuracy = (100 - enemy_hp) / env.player_controller.shot_cnt
+            accs.append(round(accuracy, 2))
+
+    # Define figure
+    plt.figure()
             
     # Draw boxplot
     plt.boxplot(gains, labels=['Gain'])
     plt.xlabel('Approach')
     plt.ylabel('Gain')
-    plt.title('Genetic v. Enemy ' + str(enemy))
+    plt.title(f'gamma={gamma}/alpha={alpha} (enemy={enemy})')
 
     if save: 
         plt.savefig(experiment_name + '/boxplot.png')
@@ -104,7 +122,21 @@ def boxplot(save, experiment_name, enemy, n_hidden_neurons, runs):
         # Save plot
         plt.show()
 
-    print("Mean Damage/Shot: ", np.mean(accs))
+    # Print statistics
+    print("\nSTATISTICS:")
+    print("Average Player HP:   ", np.mean(phps))
+    print("Average Enemy HP:    ", np.mean(ehps))
+    print("Average Gain:        ", np.mean(gains))
+    print("Average Time:        ", np.mean(times))
+    print("Average Lefts:       ", np.mean(lefts))
+    print("Average Rights:      ", np.mean(rights))
+    print("Average Jumps:       ", np.mean(jumps))
+    print("Average Releases:    ", np.mean(releases))
+    print("Average Total Shots: ", np.mean(shots))
+    print("Average Damage/Shot: ", np.mean(accs))
+    # Save statistics as dataframe
+    df = pd.DataFrame({'player_health': phps, 'enemy_health': ehps, 'gain': gains, 'time': times, 'lefts': lefts, 'rights': rights, 'jumps': jumps, 'releases': releases, 'shots': shots, 'accuracy': accs})
+    df.to_csv(experiment_name + '/behavioral_evaluation.csv', index=False)
     
 if __name__ == "__main__":
     # Parse input arguments

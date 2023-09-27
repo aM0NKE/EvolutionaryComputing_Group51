@@ -17,6 +17,10 @@ class PlayerController(Controller):
 	def __init__(self, _n_hidden):
 		self.n_hidden = [_n_hidden]
 		self.shot_cnt = 0
+		self.jumps = 0
+		self.releases = 0
+		self.lefts = 0
+		self.rights = 0
 
 	def set(self,controller, n_inputs):
 		# Number of hidden neurons
@@ -57,16 +61,19 @@ class PlayerController(Controller):
 
 		# takes decisions about sprite actions
 		if output[0] > 0.5:
+			self.lefts += 1
 			left = 1
 		else:
 			left = 0
 
 		if output[1] > 0.5:
+			self.rights += 1
 			right = 1
 		else:
 			right = 0
 
 		if output[2] > 0.5:
+			self.jumps += 1
 			jump = 1
 		else:
 			jump = 0
@@ -78,6 +85,7 @@ class PlayerController(Controller):
 			shoot = 0
 
 		if output[4] > 0.5:
+			self.releases += 1
 			release = 1
 		else:
 			release = 0
