@@ -45,7 +45,7 @@ class GeneticOptimization(object):
                  n_hidden_neurons=10, 
                  dom_u=1, 
                  dom_l=-1, 
-                 n_pop=100, 
+                 n_pop=75, 
                  generations=20, 
                  gamma=0.9, 
                  alpha=0.1,

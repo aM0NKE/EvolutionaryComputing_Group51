@@ -39,7 +39,9 @@ if __name__ == "__main__":
     args = parse_arguments()
 
     # Get enemy number from experiment name
-    enemy = re.search(r'enemy_(\d+)', args.experiment_name).group(1)
+    enemy = int(re.search(r'enemy_(\d+)', args.experiment_name).group(1))
+    gamma = float(re.search(r'gamma_(\d+.\d+)', args.experiment_name).group(1))
+    alpha = float(re.search(r'alpha_(\d+.\d+)', args.experiment_name).group(1))
 
     # Make experiment directory
     mkdir_experiment(args.experiment_name)
@@ -70,7 +72,7 @@ if __name__ == "__main__":
         trial_time = time.time()  # Sets time marker
         
         # Run Genetic Algorithm
-        genetic = GeneticOptimization(env, trail_name, gamma=0.9, alpha=0.1)
+        genetic = GeneticOptimization(env, trail_name, gamma=gamma, alpha=alpha)
         best_solution, best_fitness = genetic.optimize()
 
         print('---------------------------------------------------------------------------------')
