@@ -33,7 +33,7 @@ def plot_fitness(save, experiment_name, enemy, all_gens, all_mean_fit, all_std_f
     alpha = re.search(r'alpha_(\d+.\d+)', experiment_name).group(1)
     
     # Define figure
-    plt.figure()
+    plt.figure(figsize=(6, 4))
 
     # Get data for plotting
     min_mean_fit = [min(x) for x in zip(*all_mean_fit)]
@@ -51,7 +51,8 @@ def plot_fitness(save, experiment_name, enemy, all_gens, all_mean_fit, all_std_f
     plt.fill_between(all_gens[0], min_max_fit, max_max_fit, alpha=0.2, color='red')
 
     # Show plot
-    plt.title(f'gamma={gamma}/alpha={alpha} (enemy={enemy})')
+    # plt.title(f'gamma={gamma}/alpha={alpha} (enemy={enemy})')
+    plt.title(r'Enemy {} - $\gamma={}$/ $\alpha={}$'.format(enemy, gamma, alpha))
     plt.xlabel('Generation')
     plt.ylabel('Fitness')
     plt.grid(True)
@@ -63,8 +64,62 @@ def plot_fitness(save, experiment_name, enemy, all_gens, all_mean_fit, all_std_f
     else:
         plt.show()
 
-def boxplot(save, experiment_name, enemy, n_hidden_neurons, runs):
-     # Get gamma and alpha values from experiment name (e.g. enemy_1/gamma_0.5/alpha_0.5)
+def boxplot(save, experiment_name, compare_with, gains, gains2, enemy):
+    """
+        Args:
+            save (bool): A boolean flag to indicate whether to save the plot.
+            experiment_name (str): The name of the experiment to plot the results for.
+            compare_with (str): The name of the experiment to compare with.
+            gains (list): A list of gains for experiment_name.
+            gains2 (list): A list of gains for compare_with.
+            enemy (int): The enemy to plot the results for.
+    """
+
+    # do a t-test between gains and gains2
+    t_statistic, p_value = stats.ttest_ind(gains, gains2)
+
+    # Get gamma and alpha values from experiment name
+    gamma = re.search(r'gamma_(\d+.\d+)', experiment_name).group(1)
+    alpha = re.search(r'alpha_(\d+.\d+)', experiment_name).group(1)
+    gamma2 = re.search(r'gamma_(\d+.\d+)', compare_with).group(1)
+    alpha2 = re.search(r'alpha_(\d+.\d+)', compare_with).group(1)
+
+    # Define custom colors for the boxplots
+    colors = ['#4272f5', '#f5425a']
+
+    # Define figure
+    plt.figure(figsize=(4, 6))
+
+    # Create a boxplot with custom colors
+    boxplot = plt.boxplot([gains, gains2], labels=['The Striker', 'The Ninja'], patch_artist=True)
+
+    # Set box colors
+    for box, color in zip(boxplot['boxes'], colors):
+        box.set(facecolor=color)
+
+    # Set whisker and cap color
+    for whisker, cap in zip(boxplot['whiskers'], boxplot['caps']):
+        whisker.set(color='gray', linewidth=1)
+        cap.set(color='gray', linewidth=1)
+
+    # Set median line color
+    for median in boxplot['medians']:
+        median.set(color='black', linewidth=2)
+
+    # Set the plot title with the t-test result
+    plt.title(f'Enemy {enemy}\n(T-Test: t-stat = {t_statistic:.2f} ; p-value = {p_value:.2f})')
+    plt.xlabel('Configuration')
+    plt.ylabel('Gain')
+
+    if save: 
+        plt.savefig(experiment_name + f'/box_{enemy}.png')
+    else:
+        # Save plot
+        plt.show()
+    
+def eval_behavior(experiment_name, enemy, n_hidden_neurons=10, runs=5):
+
+    # Get gamma and alpha values from experiment name
     gamma = re.search(r'gamma_(\d+.\d+)', experiment_name).group(1)
     alpha = re.search(r'alpha_(\d+.\d+)', experiment_name).group(1)
 
@@ -104,23 +159,9 @@ def boxplot(save, experiment_name, enemy, n_hidden_neurons, runs):
             shots.append(env.player_controller.shot_cnt)
             releases.append(env.player_controller.releases)
             # Calculate accuracy
-            accuracy = (100 - enemy_hp) / env.player_controller.shot_cnt
+            try: accuracy = (100 - enemy_hp) / env.player_controller.shot_cnt
+            except: accuracy = 0
             accs.append(round(accuracy, 2))
-
-    # Define figure
-    plt.figure()
-            
-    # Draw boxplot
-    plt.boxplot(gains, labels=['Gain'])
-    plt.xlabel('Approach')
-    plt.ylabel('Gain')
-    plt.title(f'gamma={gamma}/alpha={alpha} (enemy={enemy})')
-
-    if save: 
-        plt.savefig(experiment_name + '/boxplot.png')
-    else:
-        # Save plot
-        plt.show()
 
     # Print statistics
     print("\nSTATISTICS:")
@@ -135,13 +176,16 @@ def boxplot(save, experiment_name, enemy, n_hidden_neurons, runs):
     print("Average Total Shots: ", np.mean(shots))
     print("Average Damage/Shot: ", np.mean(accs))
     # Save statistics as dataframe
-    df = pd.DataFrame({'player_health': phps, 'enemy_health': ehps, 'gain': gains, 'time': times, 'lefts': lefts, 'rights': rights, 'jumps': jumps, 'releases': releases, 'shots': shots, 'accuracy': accs})
+    df = pd.DataFrame({'enemy': [enemy for i in range(len(phps))], 'player_health': phps, 'enemy_health': ehps, 'gain': gains, 'time': times, 'lefts': lefts, 'rights': rights, 'jumps': jumps, 'releases': releases, 'shots': shots, 'accuracy': accs})
     df.to_csv(experiment_name + '/behavioral_evaluation.csv', index=False)
-    
+
+    return phps, ehps, gains, times, lefts, rights, jumps, releases, shots, accs
+
 if __name__ == "__main__":
     # Parse input arguments
     args = parse_arguments()
     enemy = re.search(r'enemy_(\d+)', args.experiment_name).group(1)
+    compare_with = 'gamma_0.1_alpha_0.9_enemy_8'
 
     # Get mean, std, max fitness over all trials
     all_gens, all_mean_fit, all_std_fit, all_max_fit = [], [], [], []
@@ -153,9 +197,13 @@ if __name__ == "__main__":
         all_std_fit.append(data['std_fit'])
         all_max_fit.append(data['max_fit'])
 
-    # Plot results
-    boxplot(args.save, args.experiment_name, enemy, 10, 5)
-    plot_fitness(args.save, args.experiment_name, enemy, all_gens, all_mean_fit, all_std_fit, all_max_fit)
+    # Eval behavior
+    phps, ehps, gains, times, lefts, rights, jumps, releases, shots, accs = eval_behavior(args.experiment_name, enemy)
+    phps2, ehps2, gains2, times2, lefts2, rights2, jumps2, releases2, shots2, accs2 = eval_behavior(compare_with, enemy)
 
-    # Use this function to perform a t-test between two approaches
-    # stats.ttest_ind(a, b)
+    # Compare approaches
+    boxplot(args.save, args.experiment_name, compare_with, gains, gains2, enemy)
+    # compare_behavior()
+    # plot_fitness(args.save, args.experiment_name, enemy, all_gens, all_mean_fit, all_std_fit, all_max_fit)
+
+
