@@ -51,12 +51,12 @@ def plot_fitness(save, experiment_name, enemy, all_gens, all_mean_fit, all_std_f
     plt.fill_between(all_gens[0], min_max_fit, max_max_fit, alpha=0.2, color='red')
 
     # Show plot
-    # plt.title(f'gamma={gamma}/alpha={alpha} (enemy={enemy})')
-    plt.title(r'Enemy {} - $\gamma={}$/ $\alpha={}$'.format(enemy, gamma, alpha))
-    plt.xlabel('Generation')
-    plt.ylabel('Fitness')
+    plt.title(r'Enemy {} - $\gamma={}$/ $\alpha={}$'.format(enemy, gamma, alpha), fontsize=13)
+    plt.xlabel('Generation', fontsize=12)
+    plt.ylabel('Fitness', fontsize=12)
     plt.grid(True)
     plt.legend(loc='lower right')
+    plt.tight_layout()
 
     if save: 
         # Save plot
@@ -107,9 +107,10 @@ def boxplot(save, experiment_name, compare_with, gains, gains2, enemy):
         median.set(color='black', linewidth=2)
 
     # Set the plot title with the t-test result
-    plt.title(f'Enemy {enemy}\n(T-Test: t-stat = {t_statistic:.2f} ; p-value = {p_value:.2f})')
-    plt.xlabel('Configuration')
-    plt.ylabel('Gain')
+    plt.title(f'Enemy {enemy}\n(T-Test: t-stat={t_statistic:.2f}; p-value={p_value:.2f})', fontsize=14)
+    plt.xlabel('Configuration', fontsize=12)
+    plt.ylabel('Gain', fontsize=12)
+    plt.tight_layout()
 
     if save: 
         plt.savefig(experiment_name + f'/box_{enemy}.png')
@@ -203,7 +204,8 @@ if __name__ == "__main__":
 
     # Compare approaches
     boxplot(args.save, args.experiment_name, compare_with, gains, gains2, enemy)
-    # compare_behavior()
-    # plot_fitness(args.save, args.experiment_name, enemy, all_gens, all_mean_fit, all_std_fit, all_max_fit)
+    
+    plot_fitness(args.save, compare_with, enemy, all_gens, all_mean_fit, all_std_fit, all_max_fit)
+    plot_fitness(args.save, args.experiment_name, enemy, all_gens, all_mean_fit, all_std_fit, all_max_fit)
 
 

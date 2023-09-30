@@ -85,9 +85,9 @@ def plot_SA_results(data1, data2, data3):
     ax.bar(x2, data2['avg_mean_fit'], width=bar_width, color='#f5425a', alpha=1.0, label='Enemy 7')
     ax.bar(x3, data3['avg_mean_fit'], width=bar_width, color='#42f542', alpha=1.0, label='Enemy 8')
 
-    ax.set_xlabel('Gamma/Alpha')
-    ax.set_ylabel('Average Mean Fit (over 3 trials)')
-    ax.set_title('Sensitivity Analysis - Fitness Function')
+    ax.set_xlabel(r'$\gamma$ / $\alpha$', fontsize=10)
+    ax.set_ylabel('Average Mean Fit (over 3 trials)', fontsize=10)
+    ax.set_title('Sensitivity Analysis - Fitness Function', fontsize=12)
 
     # Set the x-axis tick positions and labels
     ax.set_xticks(x1 + bar_width / 2)
