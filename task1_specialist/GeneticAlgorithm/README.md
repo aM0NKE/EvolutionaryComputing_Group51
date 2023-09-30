@@ -19,7 +19,7 @@
   	- `-t`: number of optimization trials (Default=3)
 - Note: this script takes around 3 to 5 hours to run, depending on the hardware you run it on.
 - Plot results: `python3 PlotSA.py -e SA_enemy_5`
-### Step 2: Parameter Tuning:
+### Step 2: Parameter Tuning
 - Command: `python3 ParameterTuning.py`
 - Note: this script takes around 3 to 5 hours to run, depending on the hardware you run it on.
 ### Step 3: Optimization 
@@ -29,7 +29,7 @@
 	- `-t`: number of optimization trials (Default=10)
 - Plot results: `python3 PlotResults.py -e gamma_0.9_alpha_0.1_enemy_5 -s`
 	- `-s`: if this flag is set, save the plots. else, show the plots. 
-### Step 4: Compare Behavior:
+### Step 4: Compare Behavior
 - Command: `python3 PlotBehavior.py`
 - Note: make sure 'FINALBehavioral_evaluation.csv' (which contains the behavioral evaluation of all trials/enemies) is in the same directory. 
 ### Step 5: Show Solution
