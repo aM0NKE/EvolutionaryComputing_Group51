@@ -7,7 +7,7 @@
 - `FitnessSensitivityAnalysis.py`: runs the sensitiviy analysis w.r.t. $\gamma$ and $\alpha$ for a particular enemy, and plots the results.
 - `GeneticOptimization.py`: our own implementation of the *Genetic Algorithm*.
 - `ParameterTuning.py`: uses a grid search approach to find the best parameter values for: $\lambda$, $k$, and mutation rate.
-- `PlotBehavior.py`: plots the behavioral comparision between \textit{The Striker} and \textit{The Ninja}.
+- `PlotBehavior.py`: plots the behavioral comparision between _The Striker_ and _The Ninja_.
 - `PlotResults.py`: generates the fitness and gain plots over all of the optimization runs. 
 - `PlotSA.py`: plots the results of the Sensitivity Analysis. 
 - `ShowSolution.py`: runs the game and shows the best found solution.
