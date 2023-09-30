@@ -186,7 +186,7 @@ if __name__ == "__main__":
     # Parse input arguments
     args = parse_arguments()
     enemy = re.search(r'enemy_(\d+)', args.experiment_name).group(1)
-    compare_with = 'gamma_0.1_alpha_0.9_enemy_8'
+    compare_with = 'gamma_0.1_alpha_0.9_enemy_5'
 
     # Get mean, std, max fitness over all trials
     all_gens, all_mean_fit, all_std_fit, all_max_fit = [], [], [], []
