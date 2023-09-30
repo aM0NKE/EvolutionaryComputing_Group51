@@ -204,8 +204,4 @@ if __name__ == "__main__":
 
     # Compare approaches
     boxplot(args.save, args.experiment_name, compare_with, gains, gains2, enemy)
-    
-    plot_fitness(args.save, compare_with, enemy, all_gens, all_mean_fit, all_std_fit, all_max_fit)
     plot_fitness(args.save, args.experiment_name, enemy, all_gens, all_mean_fit, all_std_fit, all_max_fit)
-
-
