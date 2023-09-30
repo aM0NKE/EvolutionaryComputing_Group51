@@ -1,7 +1,7 @@
 # Genetic Algorithm
 ## Contents:
 - `\Results`: contains all of the results generated for the final report.
-- `evoman`: contains the EvoMan framework.
+- `\evoman`: contains the EvoMan framework.
 - `Controller.py`: contains neural network connected to game controller we are aiming to optimize.
 - `Experiment.py`: runs the experiment of optimizing the controller for a given enemy for x amount of trials.
 - `FitnessSensitivityAnalysis.py`: runs the sensitiviy analysis w.r.t. $\gamma$ and $\alpha$ for a particular enemy, and plots the results.
@@ -36,4 +36,4 @@
 - Command: `python3 ShowSolution.py -e gamma_0.9_alpha_0.1_enemy_5`
 	- Flags:
 		- `-e`: directory to the experiment
-		- `-n`: number of neurons (Default=
+		- `-n`: number of neurons (Default=10)
