@@ -1,34 +1,39 @@
 # Genetic Algorithm
 ## Contents:
+- `\Results`: contains all of the results generated for the final report.
+- `evoman`: contains the EvoMan framework.
 - `Controller.py`: contains neural network connected to game controller we are aiming to optimize.
-- `Experiment.py`: runs the experiment of optimizing the controller.
-- `FitnessSensitivityAnalysis.py`: runs the sensitiviy analysis w.r.t. gamma and beta for a particular enemy, and plots the results.
-- `GeneticOptimization.py`: a reworked version of the *Genetic Algorithm* that was provided by the course admins.
-- `GeneticOptimizationV2.py`: our own implementation of the *Genetic Algorithm*.
-- `PlotResults.py`: generates the fitness and gain plots over all optimization runs. 
-- `ShowSolution.py`: runs game and shows the best found solution.
+- `Experiment.py`: runs the experiment of optimizing the controller for a given enemy for x amount of trials.
+- `FitnessSensitivityAnalysis.py`: runs the sensitiviy analysis w.r.t. $\gamma$ and $\alpha$ for a particular enemy, and plots the results.
+- `GeneticOptimization.py`: our own implementation of the *Genetic Algorithm*.
+- `ParameterTuning.py`: uses a grid search approach to find the best parameter values for: $\lambda$, $k$, and mutation rate.
+- `PlotBehavior.py`: plots the behavioral comparision between \textit{The Striker} and \textit{The Ninja}.
+- `PlotResults.py`: generates the fitness and gain plots over all of the optimization runs. 
+- `PlotSA.py`: plots the results of the Sensitivity Analysis. 
+- `ShowSolution.py`: runs the game and shows the best found solution.
 ## Example Usage:
 ### Step 1: Sensitivity Analysis
-- Command: `python3 FitnessSensitivityAnalysis.py -e SA_enemy_2`
+- Command: `python3 FitnessSensitivityAnalysis.py -e SA_enemy_5`
 - Flags:
-	- `-p`: if this flag is set, plot SA results. else, run the experiment. 
  	- `-e`:	directory you want to store the results (make sure enemy_x is in the name)
-  	- `-n`: number of neurons
-  	- `-t`: number of optimization trials
-### Step 2: Optimization 
-- Command: `python3 Experiment.py -e 2 -n 10 -t 10 -g 20`
+  	- `-t`: number of optimization trials (Default=3)
+- Plot results: `python3 PlotSA.py -e SA_enemy_5`
+### Step 2: Parameter Tuning:
+- Command: `python3 ParameterTuning.py`
+- Note: this script takes around 3 to 5 hours to run, depending on the hardware you run it on.
+### Step 3: Optimization 
+- Command: `python3 Experiment.py -e gamma_0.9_alpha_0.1_enemy_5`
 - Flags:
-	- `-e`: number corresponding to Evoman enemy (1-8)
-	- `-n`: number of neurons
-	- `-t`: number of optimization trials
- 	- `-g`: number of generations per optimization trial
-### Step 3: Plot Results
-- Command: `python3 PlotResults.py -e genetic_v_enemy_2/ -s`
-- Flags: 
-	- `-e`: directory to the experiment
- 	- `-s`: if this flag is set, save the plots. else, show the plots. 
-### Step 4: Show Solution
-- Command: `python3 ShowSolution.py -e genetic_v_enemy_2/`
+ 	- `-e`:	directory you want to store the results (make sure enemy_x/gamma_y/alpha_z are in the name)
+	- `-t`: number of optimization trials (Default=10)
+- Plot results: 
+	-  `python3 PlotResults.py -e gamma_0.9_alpha_0.1_enemy_5 -s`
+		- `-s`: if this flag is set, save the plots. else, show the plots. 
+### Step 4: Compare Behavior:
+- Command: `python3 PlotBehavior.py`
+- Note: make sure 'FINALBehavioral_evaluation.csv' (which contains the behavioral evaluation of all trials/enemies) is in the same directory. 
+### Step 5: Show Solution
+- Command: `python3 ShowSolution.py -e gamma_0.9_alpha_0.1_enemy_5`
 	- Flags:
 		- `-e`: directory to the experiment
-		- `-n`: number of neurons
+		- `-n`: number of neurons (Default=
