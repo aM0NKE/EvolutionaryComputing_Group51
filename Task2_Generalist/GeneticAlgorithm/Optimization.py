@@ -45,14 +45,14 @@ class GeneticOptimization(object):
                  n_hidden_neurons=10, 
                  dom_u=1, 
                  dom_l=-1, 
-                 n_pop=75, 
-                 generations=20, 
+                 n_pop=50, 
+                 generations=25, 
                  gamma=0.9, 
                  alpha=0.1,
-                 selection_lambda=50,
-                 selection_k=8,
+                 selection_lambda=12,
+                 selection_k=4,
                  crossover_alpha=0.5,
-                 mutation_rate=0.01):
+                 mutation_rate=0.1):
         """
             Initializes the Genetic Algorithm.
             
@@ -61,6 +61,7 @@ class GeneticOptimization(object):
                 pop (np.array): The population of individuals.
                 best_fitness (float): The best fitness found so far.
                 fitness_values (list): The fitness values of the current population.
+                gain_values (list): The gain values of the current population.
         """
         # Initialize input arguments
         self.env = env
@@ -77,7 +78,10 @@ class GeneticOptimization(object):
         # Generation params
         self.generations = generations
         self.best_fitness = float('-inf')
-        self.fitness_values = []
+        self.fitness_values = np.array([])
+        self.gain_values = np.array([])
+        self._evaluate_population()
+        self.save_results(0)
         
         # Fitness func weights
         self.gamma = gamma
@@ -116,7 +120,18 @@ class GeneticOptimization(object):
 
         # Calculate gain
         vgain = vplayerlife - venemylife
-        return vfitness
+        return vfitness, vgain
+    
+    def _evaluate_population(self):
+        """
+            Evaluates the fitness of the current population.
+        """
+        self.fitness_values = np.array([])
+        self.gain_values = np.array([])
+        for individual in self.pop:
+            fitness, gain = self._evaluate_solution(individual)
+            self.fitness_values = np.append(self.fitness_values, fitness)
+            self.gain_values = np.append(self.gain_values, gain)
     
     def _tournament_selection(self):
         """
@@ -132,9 +147,9 @@ class GeneticOptimization(object):
             tournament_indices = np.random.choice(self.n_pop, size=self.selection_k, replace=False)
             tournament = self.pop[tournament_indices]
             # Evaluate fitness of individuals in tournament
-            self.fitness_values = [self._evaluate_solution(individual) for individual in tournament]
-            # Select best individual
-            best_index = np.argmax(self.fitness_values)
+            tournament_fitness = self.fitness_values[tournament_indices]
+            # Select best individual and add to parent pool
+            best_index = np.argmax(tournament_fitness)
             selected_parents.append(tournament[best_index])
         return selected_parents
     
@@ -170,7 +185,7 @@ class GeneticOptimization(object):
         mutated_child[mutation_mask] += np.random.uniform(-0.1, 0.1, size=np.sum(mutation_mask))
         return mutated_child
     
-    def _replace_worst(self, gen, children):
+    def _replace_worst(self, children):
         """
             Adds children to the population and removes the worst individuals.
 
@@ -180,22 +195,44 @@ class GeneticOptimization(object):
         """
         # Add children to population
         self.pop = np.vstack((self.pop, np.array(children)))
-        # Rank population
-        self.fitness_values = [self._evaluate_solution(individual) for individual in self.pop]
+        # Evaluate and rank population
+        self._evaluate_population()
         sorted_indices = np.argsort(self.fitness_values)[::-1]
         # Remove worst individuals
         self.pop = self.pop[sorted_indices][:self.n_pop]
+        self.fitness_values = self.fitness_values[sorted_indices][:self.n_pop]
+        self.gain_values = self.gain_values[sorted_indices][:self.n_pop]
 
-        # Print/Save stats
+    def save_results(self, gen):
+        # Calculate stats
         mean_fit = np.mean(self.fitness_values)
         std_fit = np.std(self.fitness_values)
         max_fit = np.max(self.fitness_values)
-        print("Fitness Mean: {}, Std: {} Max: {}".format(str(round(mean_fit, 1)), str(round(std_fit, 1)), str(round(max_fit, 1))))
+        mean_gain = np.mean(self.gain_values)
+        std_gain = np.std(self.gain_values)
+        max_gain = np.max(self.gain_values)
+        
+        # Print training stats
+        print('gen: {} | mean_fit: {} | std_fit: {} | max_fit: {} | mean_gain: {} | std_gain: {} | max_gain: {}'.format(gen, str(round(mean_fit, 6)), str(round(std_fit, 6)), str(round(max_fit, 6)), str(round(mean_gain, 6)), str(round(std_gain, 6)), str(round(max_gain, 6))))
+        
+        # Save training logs
         with open(os.path.join(self.experiment_name, 'optimization_logs.txt'), 'a') as file_aux:
-            if gen == 1: 
-                file_aux.write('gen mean_fit std_fit max_fit')
-            else:       
-                file_aux.write('\n{} {} {} {}'.format(gen, str(round(mean_fit, 6)), str(round(std_fit, 6)), str(round(max_fit, 6))))
+            if gen == 0: 
+                file_aux.write('gen mean_fit std_fit max_fit mean_gain std_gain max_gain')
+                file_aux.write('\n{} {} {} {} {} {} {}'.format(gen, str(round(mean_fit, 6)), str(round(std_fit, 6)), str(round(max_fit, 6)), str(round(mean_gain, 6)), str(round(std_gain, 6)), str(round(max_gain, 6))))
+            else:   
+                file_aux.write('\n{} {} {} {} {} {} {}'.format(gen, str(round(mean_fit, 6)), str(round(std_fit, 6)), str(round(max_fit, 6)), str(round(mean_gain, 6)), str(round(std_gain, 6)), str(round(max_gain, 6))))    
+
+        # Save population of the current generation
+        if gen == 0:
+            os.makedirs(os.path.join(self.experiment_name, 'generations'))
+        generation_file_path = os.path.join(self.experiment_name, 'generations/gen_{}.txt'.format(gen))
+        with open(generation_file_path, 'a') as file_aux:
+            np.savetxt(file_aux, self.pop)
+
+        # Save generation number
+        with open(os.path.join(self.experiment_name, 'gen_num.txt'), 'w') as file_aux:
+            file_aux.write(str(gen))
 
     def optimize(self):
         """
@@ -214,23 +251,15 @@ class GeneticOptimization(object):
             children = [self._nonuniform_mutation(child) for child in children]
 
             # Replacement
-            self._replace_worst(gen, children)
+            self._replace_worst(children)
 
             # Check if the best solution has improved
-            current_best_fitness = self._evaluate_solution(self.pop[0])
+            current_best_fitness = self.fitness_values[0]
             if current_best_fitness > self.best_fitness:
                 np.savetxt(os.path.join(self.experiment_name, 'best_solution.txt'), self.pop[0])
                 self.best_fitness = current_best_fitness
 
-            # Save population of the current generation
-            if gen == 1:
-                os.makedirs(os.path.join(self.experiment_name, 'generations'))
-            generation_file_path = os.path.join(self.experiment_name, 'generations/gen_{}.txt'.format(gen))
-            with open(generation_file_path, 'a') as file_aux:
-                np.savetxt(file_aux, self.pop)
-
-            # Save generation number
-            with open(os.path.join(self.experiment_name, 'gen_num.txt'), 'w') as file_aux:
-                file_aux.write(str(gen))
+            # Save results
+            self.save_results(gen)
 
         return self.pop[0], self.best_fitness

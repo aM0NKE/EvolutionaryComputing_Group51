@@ -31,8 +31,8 @@ class NEATOptimization(object):
 
         # Keep track of the population and fitness
         self.pop = None
-        self.fit_pop = None
-        self.gain_pop = None
+        self.fitness_values = np.array([])
+        self.gain_values = np.array([])
 
     def _initialize_population(self):
         """
@@ -69,14 +69,14 @@ class NEATOptimization(object):
             Evaluates the population of solutions.
         """
         # Reset fitness and gain lists
-        self.fit_pop = []
-        self.gain_pop = []
+        self.fitness_values = np.array([])
+        self.gain_values = np.array([])
 
         # Evaluate each genome in the population
         for genome_id, genome in genomes:
             genome.fitness, genome.gain = self._eval_genome(genome)
-            self.fit_pop.append(genome.fitness)
-            self.gain_pop.append(genome.gain)
+            self.fitness_values = np.append(self.fitness_values, genome.fitness)
+            self.gain_values = np.append(self.gain_values, genome.gain)
         
         # Save results to optimization logs
         self._save_results()
@@ -88,20 +88,27 @@ class NEATOptimization(object):
             Args:
                 init (bool): Whether this is the first generation.
         """
+        if init:
+            initial_eval = [self._eval_genome(genome) for genome_id, genome in self.pop.population.items()]
+            self.fitness_values = np.append(self.fitness_values, [x[0] for x in initial_eval])
+            self.gain_values = np.append(self.gain_values, [x[1] for x in initial_eval])
+
         # Find stats
-        if not init: 
-            best_fit = np.argmax(self.fit_pop)
-            mean_fit = np.mean(self.fit_pop)
-            std_fit  =  np.std(self.fit_pop)
-            best_gain = np.argmax(self.gain_pop)
-            mean_gain = np.mean(self.gain_pop)
-            std_gain = np.std(self.gain_pop)
+        mean_fit = np.mean(self.fitness_values)
+        std_fit  =  np.std(self.fitness_values)
+        max_fit = np.max(self.fitness_values)
+        mean_gain = np.mean(self.gain_values)
+        std_gain = np.std(self.gain_values)
+        max_gain = np.max(self.gain_values)
 
         # Save stats to optimization logs
         with open(os.path.join(self.experiment_name, 'optimization_logs.txt'), 'a') as file_aux:
-            if init: file_aux.write('mean_fit std_fit max_fit mean_gain std_gain max_gain')
-            else: file_aux.write('\n' + str(round(mean_fit, 6)) + ' ' + str(round(std_fit, 6)) + ' ' + str(round(self.fit_pop[best_fit], 6)) + ' ' + str(round(mean_gain, 6)) + ' ' + str(round(std_gain, 6)) + ' ' + str(round(self.gain_pop[best_gain], 6)))
-        
+            if init:
+                file_aux.write('mean_fit std_fit max_fit mean_gain std_gain max_gain')
+                file_aux.write('\n{} {} {} {} {} {}'.format(str(round(mean_fit, 6)), str(round(std_fit, 6)), str(round(max_fit, 6)), str(round(mean_gain, 6)), str(round(std_gain, 6)), str(round(max_gain, 6))))
+            else:   
+                file_aux.write('\n{} {} {} {} {} {}'.format(str(round(mean_fit, 6)), str(round(std_fit, 6)), str(round(max_fit, 6)), str(round(mean_gain, 6)), str(round(std_gain, 6)), str(round(max_gain, 6))))    
+
     def _run(self):
         """
             Runs the NEAT algorithm for a single trial.
