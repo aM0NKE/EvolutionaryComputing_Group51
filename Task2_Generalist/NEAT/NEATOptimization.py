@@ -54,18 +54,17 @@ class NEATOptimization(object):
 
     def _eval_genome(self, p):
         """
-            Calculates the fitness of a single genome.
+            Calculates the fitness and gain of a single genome.
 
             Args:
                 p (list): The genome to be evaluated.
         """
         # Run the game
-        fitness, player_hp, enemy_hp, time = self.env.play(pcont=p)
+        vfitness, vplayerlife, venemylife, vtime = self.env.play(pcont=p)
 
         # Calculate gain
-        gain = player_hp - enemy_hp
-
-        return fitness, gain
+        vgain = vplayerlife - venemylife
+        return vfitness, vgain
 
     def _eval_genomes(self, genomes, config):
         """ 

@@ -23,19 +23,11 @@ def parse_arguments():
     """
     parser = argparse.ArgumentParser(description="Your script description here")
     # Add input arguments
-    parser.add_argument('-e', '--enemy', type=int, help='Integer value between 1 and 8', default=8)
+    parser.add_argument('-d', '--directory', type=str, help='String value', default='TESTING_NEAT')
     parser.add_argument('-t', '--trials', type=int, help='Integer value', default=10)
     parser.add_argument('-g', '--gens', type=int, help='Integer value', default=25)
-    parser.add_argument('-v', '--visuals', type=bool, help='Boolean value', default=False)
     
     return parser.parse_args()
-
-def check_visuals(visuals):
-    """
-        Checks whether to use visuals or not.
-    """
-    if not visuals:
-        os.environ["SDL_VIDEODRIVER"] = "dummy"
 
 def mkdir_experiment(experiment_name):
     """
@@ -51,12 +43,8 @@ if __name__ == "__main__":
     # Parse input arguments
     args = parse_arguments()
 
-    # Check whether to turn on visuals
-    check_visuals(args.visuals)
-
-    # Set experiment name
-    experiment_name = 'neat_v_enemy_' + str(args.enemy)
-    mkdir_experiment(experiment_name)
+    # Make experiment directory
+    mkdir_experiment(args.directory)
 
     experiment_time = time.time()  # Sets time marker for entire experiment
 
@@ -67,18 +55,19 @@ if __name__ == "__main__":
         print('---------------------------------------------------------------------------------')
         
         # Set trail name
-        trail_name = experiment_name + '/trial_' + str(t)
+        trail_name = args.directory + '/trial_' + str(t)
         os.makedirs(trail_name)
-        
-        # Initialize game simulation in individual evolution mode, for single static enemy.
+
+        # initializes simulation in multi evolution mode, for multiple static enemies.
         env = Environment(experiment_name=trail_name,
-                        enemies=[args.enemy],
+                        enemies=[1,2,3,4,5,6,7,8],
+                        multiplemode="yes",
                         playermode="ai",
                         player_controller=NEATPlayerController(),
                         enemymode="static",
                         level=2,
                         speed="fastest",
-                        visuals=args.visuals)
+                        visuals=False)
         # [NOTE]: Default environment fitness is assumed for experiment
         env.state_to_log() # Checks environment state
                 

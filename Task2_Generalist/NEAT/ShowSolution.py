@@ -12,20 +12,21 @@ import argparse
 import glob
 
 def parse_arguments():
-	"""
+    """
         Parses the input arguments.
         
         Args:
             enemy (int): The enemy to be used to train the neural network.
             n_hidden_neurons (int): The number of hidden neurons in the neural network.
-	"""
-	parser = argparse.ArgumentParser(description="Your script description here")
+    """
+    parser = argparse.ArgumentParser(description="Your script description here")
 
-	# Add input arguments
-	parser.add_argument('-e', '--enemy', type=int, help='Integer value between 1 and 8', default=8)
-	parser.add_argument('-n', '--n_hidden_neurons', type=int, help='Integer value', default=10)
+    # Add input arguments
+    parser.add_argument('-d', '--directory', type=str, help='String value', default='TESTING_NEAT')
+    parser.add_argument('-e', '--enemy', type=int, help='Integer value between 1 and 8', default=8)
+    parser.add_argument('-n', '--n_hidden_neurons', type=int, help='Integer value', default=10)
 
-	return parser.parse_args()
+    return parser.parse_args()
 
 def find_best_solution(experiment_name):
     """
@@ -72,15 +73,13 @@ if __name__ == "__main__":
     # Parse input arguments
     args = parse_arguments()
 
-    # Set experiment name
-    experiment_name = 'neat_v_enemy_' + str(args.enemy)
-
     # Find best solution
-    best_solution_trial_name = find_best_solution(experiment_name)
+    best_solution_trial_name = find_best_solution(args.directory)
 
     # Initialize environment for single objective mode (specialist)  with static enemy and ai player
     env = Environment(experiment_name=best_solution_trial_name,
-                    enemies=[args.enemy],
+                    enemies=[1,2,3,4,5,6,7,8],
+                    multiplemode="yes",
                     playermode="ai",
                     player_controller=NEATPlayerController(),
                     speed="normal",
