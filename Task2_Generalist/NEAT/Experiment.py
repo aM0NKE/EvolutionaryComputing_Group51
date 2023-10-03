@@ -1,8 +1,8 @@
 # Import framework
 import sys 
 from evoman.environment import Environment
-from NEATController import NEATPlayerController
-from NEATOptimization import NEATOptimization
+from Controller import NEATController
+from Optimization import NEATOptimization
 
 # Import other libs
 import time
@@ -60,10 +60,10 @@ if __name__ == "__main__":
 
         # initializes simulation in multi evolution mode, for multiple static enemies.
         env = Environment(experiment_name=trail_name,
-                        enemies=[1,2,3,4,5,6,7,8],
+                        enemies=[2,5,7,8],
                         multiplemode="yes",
                         playermode="ai",
-                        player_controller=NEATPlayerController(),
+                        player_controller=NEATController(),
                         enemymode="static",
                         level=2,
                         speed="fastest",

@@ -3,8 +3,8 @@ import sys
 import glob, os
 import argparse
 from evoman.environment import Environment
-from Controller import PlayerController
-from GeneticOptimization import GeneticOptimization
+from Controller import GeneticController
+from Optimization import GeneticOptimization
 
 # Import other libs
 import time
@@ -55,10 +55,10 @@ if __name__ == "__main__":
 
         # Initialize game simulation in individual evolution mode, for single static enemy.
         env = Environment(experiment_name=trail_name,
-                        enemies=[1,2,3,4,5,6,7,8],
+                        enemies=[2,5,7,8],
                         multiplemode="yes",
                         playermode="ai",
-                        player_controller=PlayerController(10),
+                        player_controller=GeneticController(10),
                         enemymode="static",
                         level=2,
                         speed="fastest",

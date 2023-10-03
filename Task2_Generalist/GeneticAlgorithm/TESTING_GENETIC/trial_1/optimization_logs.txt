@@ -1,1 +1,0 @@
-gen mean_fit std_fit max_fit

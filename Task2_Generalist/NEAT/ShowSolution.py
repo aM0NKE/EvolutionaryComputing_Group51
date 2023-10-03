@@ -1,7 +1,7 @@
 # Import framework
 import sys, os
 from evoman.environment import Environment
-from NEATController import NEATPlayerController
+from Controller import NEATController
 
 # Import other libs
 import neat
@@ -81,7 +81,7 @@ if __name__ == "__main__":
                     enemies=[1,2,3,4,5,6,7,8],
                     multiplemode="yes",
                     playermode="ai",
-                    player_controller=NEATPlayerController(),
+                    player_controller=NEATController(),
                     speed="normal",
                     enemymode="static",
                     level=2,

@@ -13,7 +13,7 @@ def sigmoid_activation(x):
 
 
 # implements controller structure for player
-class PlayerController(Controller):
+class GeneticController(Controller):
 	def __init__(self, _n_hidden):
 		self.n_hidden = [_n_hidden]
 		self.shot_cnt = 0
