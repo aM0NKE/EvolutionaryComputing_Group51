@@ -40,7 +40,7 @@ def find_best_solution(experiment_name):
 	for t in trials:
 		# Find the best solution for each trial
 		data = pd.read_csv(t + '/optimization_logs.txt', sep='\s+', header=0)
-		current_solution = max(data['max_fit'])
+		current_solution = max(data['max_gain'])
 
 		# Check if current solution is better than the best solution
 		if current_solution > best_solution_gain:
@@ -56,6 +56,7 @@ if __name__ == "__main__":
 
 	# Find best solution
 	best_solution_trial_name = find_best_solution(args.experiment_name)
+	print('Best solution found in trial: ' + best_solution_trial_name)
 
 	# Initialize environment for single objective mode (specialist)  with static enemy and ai player
 	env = Environment(experiment_name=best_solution_trial_name,
@@ -70,4 +71,5 @@ if __name__ == "__main__":
 
 	# Load specialist controller
 	sol = np.loadtxt(best_solution_trial_name + '/best_solution.txt')
-	env.play(sol)
+	fitness, playerHP, enemyHP, time = env.play(sol)
+	print('Total Gain: ' + str(playerHP - enemyHP))

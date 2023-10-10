@@ -60,7 +60,7 @@ if __name__ == "__main__":
 
         # initializes simulation in multi evolution mode, for multiple static enemies.
         env = Environment(experiment_name=trail_name,
-                        enemies=[2,5,7,8],
+                        enemies=[1,3,4,6],
                         multiplemode="yes",
                         playermode="ai",
                         player_controller=NEATController(),

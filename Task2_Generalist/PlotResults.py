@@ -1,4 +1,4 @@
-# # Import framework
+# Import framework
 from evoman.environment import Environment
 from GeneticAlgorithm.Controller import GeneticController
 from NEAT.Controller import NEATController
@@ -136,7 +136,7 @@ def boxplot(runs, enemy_groupA, enemy_groupB, geneticA_dir, geneticB_dir, neatA_
 if __name__ == "__main__":
 
     # Set enemy groups
-    enemy_groupA = [2,5,7,8]
+    enemy_groupA = [1,3,4,6]
     enemy_groupB = [2,5,7,8]
 
     # Set experiment directories

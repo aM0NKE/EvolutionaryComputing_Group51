@@ -22,7 +22,7 @@ def parse_arguments():
     # Add input arguments
     parser.add_argument('-d', '--directory', type=str, help='String value', default='TESTING_GENETIC')
     parser.add_argument('-t', '--trials', type=int, help='Integer value', default=10)
-    parser.add_argument('-g', '--gens', type=int, help='Integer value', default=25)
+    parser.add_argument('-g', '--gens', type=int, help='Integer value', default=30)
     return parser.parse_args()
 
 def mkdir_experiment(experiment_name):
@@ -38,6 +38,10 @@ def mkdir_experiment(experiment_name):
 if __name__ == "__main__":
     # Parse input arguments
     args = parse_arguments()
+
+    # Define enemy group
+    # enemies = [2,5,7,8]
+    enemies = [1,2,3,4]
 
     # Make experiment directory
     mkdir_experiment(args.directory)
@@ -55,7 +59,7 @@ if __name__ == "__main__":
 
         # Initialize game simulation in individual evolution mode, for single static enemy.
         env = Environment(experiment_name=trail_name,
-                        enemies=[2,5,7,8],
+                        enemies=enemies,
                         multiplemode="yes",
                         playermode="ai",
                         player_controller=GeneticController(10),
