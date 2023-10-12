@@ -40,7 +40,9 @@ if __name__ == "__main__":
     args = parse_arguments()
 
     # Define enemy group
-    # enemies = [2,5,7,8]
+    # enemies = [1,5,6]
+    # enemies = [1,2,3,4]
+    # enemies = [1,2,3,4,7]
     enemies = [1,2,3,4]
 
     # Make experiment directory

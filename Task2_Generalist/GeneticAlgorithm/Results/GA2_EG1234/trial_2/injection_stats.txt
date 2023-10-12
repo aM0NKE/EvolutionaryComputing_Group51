@@ -1,0 +1,3 @@
+Solution Improved: True
+Final Ranking: {'load_from/best_solution.txt': -3}
+Number of offspring: {'load_from/best_solution.txt': 11}

@@ -36,7 +36,6 @@ class GeneticOptimization(object):
         selection_lambda (int): The number of parents to select.
         selection_k (int): The number of individuals to select for the tournament.
         crossover_alpha (float): The crossover parameter.
-        mutation_rate (float): Percentage of genes to mustate.
     """
 
     def __init__(self, 
@@ -49,11 +48,9 @@ class GeneticOptimization(object):
                  generations=30, 
                  gamma=0.6, 
                  alpha=0.4,
-                 selection_lambda=25,
-                 selection_k=8,
-                 crossover_alpha=0.5,
-                 mutation_rate=0.2, 
-                 mutation_step_size=0.1):
+                 selection_lambda=50,
+                 selection_k=4,
+                 crossover_alpha=0.5):
         """
             Initializes the Genetic Algorithm.
             
@@ -78,7 +75,7 @@ class GeneticOptimization(object):
 
         # Generation params
         self.generations = generations
-        self.best_fitness = float('-inf')
+        self.best_gain = float('-inf')
         self.fitness_values = np.array([])
         self.gain_values = np.array([])
         
@@ -93,19 +90,18 @@ class GeneticOptimization(object):
         # Crossover param
         self.crossover_alpha = crossover_alpha
         
-        # Non-uniform Mutation param
-        self.mutation_rate = mutation_rate
-        self.mutation_step_size = mutation_step_size
-
-        # Self-adaptive mutation (uncorrelated/step_size=1) params
-        # self.tau = 1 / np.sqrt(self.n_vars)
-        # self.sigma = np.exp(self.tau * np.random.normal(0, 1, size=self.n_vars))
-
         # Self-adaptive mutation (uncorrelated/step_size=n) params
         self.tau_prime = 1 / np.sqrt(2 * self.n_vars)
         self.tau = 1 / np.sqrt(2 * np.sqrt(self.n_vars))
         self.sigmas = np.ones((self.n_pop, self.n_vars))
         self.children_sigmas = np.array([])
+
+        # Stats to keep track of injected solutions
+        self.n_injected_solutions = 0
+        self.injected_solutions = np.empty((0, self.n_vars))
+        self.injected_solutions_indexes = {} # for ranking
+        self.injected_solutions_offspring = {} # for tracking
+        self.injected_solutions_max_gain = float('-inf') # for checking if the best solution has improved
 
         self.initilize_population()
         self._evaluate_population()
@@ -115,16 +111,32 @@ class GeneticOptimization(object):
         """
             Initializes the population with previous solution.
         """
-
-        # find files in folder /load_from
+        print('\n---------------------------------------------------------------------------------')
+        # Find solutions to inject
         solutions = glob.glob('load_from/*.txt')
         for file in solutions:
-            # open solution
-            solution = np.loadtxt(file).reshape(1, self.n_vars)
+            # Open solution
+            solution = np.loadtxt(file)
+
+            # Evaluate solution
+            fitness, gain = self._evaluate_solution(solution)
+
+            # Update tracking stats for injected solutions
+            self.injected_solutions = np.vstack((self.injected_solutions, solution))
+            self.injected_solutions_indexes[file] = self.n_injected_solutions
+            self.injected_solutions_offspring[file] = 0
+            if gain > self.injected_solutions_max_gain: self.injected_solutions_max_gain = gain
+            self.n_injected_solutions += 1
+
+            # Add solution to population
             self.pop = np.vstack((self.pop, solution))
 
+            print(f'\nInjected solution from: {file}')
+            print(f'\tFitness:  {str(fitness)}')
+            print(f'\tGain:     {str(gain)}')
+
+        # Fill the rest of the population with random solutions
         while self.pop.shape[0] < self.n_pop:
-            # Initialize population
             self.pop = np.vstack((self.pop, np.random.uniform(self.dom_l, self.dom_u, size=self.n_vars)))
 
     def _fitness_function(self, enemylife, playerlife, time):
@@ -147,21 +159,25 @@ class GeneticOptimization(object):
         """
         # Run the game
         _, vplayerlife, venemylife, vtime = self.env.play(pcont=p)
-
-        # print(self.env.player_controller.shot_cnt/4)
-        # self.env.player_controller.shot_cnt = 0
-
+        # Calculate fitness
+        # print(f'\nPlayer Life: {vplayerlife}')
+        # print(f'Enemy Life:  {venemylife}')
+        # print(f'Time:        {vtime}')
         vfitness = self._fitness_function(venemylife, vplayerlife, vtime)
+        # print(f'Fitness:     {vfitness}')
         # Calculate gain
         vgain = vplayerlife - venemylife
+        # print(f'Gain:        {vgain}')
         return vfitness, vgain
     
     def _evaluate_population(self):
         """
             Evaluates the fitness of the current population.
         """
+        # Clear fitness and gain values
         self.fitness_values = np.array([])
         self.gain_values = np.array([])
+        # Evaluate fitness of each individual
         for individual in self.pop:
             fitness, gain = self._evaluate_solution(individual)
             self.fitness_values = np.append(self.fitness_values, fitness)
@@ -173,7 +189,15 @@ class GeneticOptimization(object):
         self.fitness_values = self.fitness_values[sorted_indices]
         self.gain_values = self.gain_values[sorted_indices]
         self.sigmas = self.sigmas[sorted_indices]
-    
+
+        # Update injection tracking stats
+        if self.n_injected_solutions > 0:
+            for key, value in self.injected_solutions_indexes.items():
+                # Check if injected solution has been removed
+                if value >= 0:
+                    # If not update index
+                    self.injected_solutions_indexes[key] = sorted_indices[value]
+
     def _tournament_selection(self):
         """
             Selects parents using tournament selection.
@@ -209,10 +233,16 @@ class GeneticOptimization(object):
         children_sigmas_list = []  # Initialize as a list
         for i in range(self.selection_lambda):
             gamma = (1 - 2 * self.crossover_alpha) * np.random.uniform(0, 1, size=self.n_vars) - self.crossover_alpha
-            parents_ids = random.sample(parents_ids, 2)
-            parent1, parent2 = self.pop[parents_ids[0]], self.pop[parents_ids[1]]
+            sample_parents = random.sample(parents_ids, 2)
+            parent1, parent2 = self.pop[sample_parents[0]], self.pop[sample_parents[1]]
             children.append((1 - gamma) * parent1 + gamma * parent2)
-            children_sigmas_list.append(np.abs((1 - gamma) * self.sigmas[parents_ids[0]] + gamma * self.sigmas[parents_ids[1]]))
+            children_sigmas_list.append(np.abs((1 - gamma) * self.sigmas[sample_parents[0]] + gamma * self.sigmas[sample_parents[1]]))
+        
+            # Update injection tracking stats
+            for key, value in self.injected_solutions_indexes.items():
+                if value in sample_parents:
+                    self.injected_solutions_offspring[key] += 1
+        
         # Convert the list to a NumPy array
         self.children_sigmas = np.array(children_sigmas_list)
         return children
@@ -270,7 +300,7 @@ class GeneticOptimization(object):
         mutated_children += self.children_sigmas * np.random.normal(0, 1, size=(self.selection_lambda, self.n_vars))
         return mutated_children
 
-    def _replace_worst(self, parents_ids, children):
+    def _replace_worst(self, parents_ids, children, gen):
         """
             Adds children to the population and removes the worst individuals.
 
@@ -286,6 +316,14 @@ class GeneticOptimization(object):
         # Add children to population
         self.pop = np.vstack((self.pop, np.array(children)))[:self.n_pop]
 
+        # Keep track of injected solutions
+        if self.n_injected_solutions > 0:
+            for key, value in self.injected_solutions_indexes.items():
+                # Check if injected solution has been removed
+                if 0 <= value >= (self.n_pop - self.selection_lambda):
+                    self.injected_solutions_indexes[key] = -gen
+                    print(f'Removed injected solution: {key} \n\t (from population after {gen} generations)')                    
+                    
         # Evaluate and rank population
         self._evaluate_population()
 
@@ -317,6 +355,10 @@ class GeneticOptimization(object):
         self._evaluate_population()
 
     def save_results(self, gen):
+        if gen == 0:
+            print('---------------------------------------------------------------------------------')
+            print('Initial generation statistics:')
+
         # Calculate stats
         mean_fit = np.mean(self.fitness_values)
         std_fit = np.std(self.fitness_values)
@@ -326,7 +368,7 @@ class GeneticOptimization(object):
         max_gain = np.max(self.gain_values)
         
         # Print training stats
-        print('gen: {} | mean_fit: {} | std_fit: {} | max_fit: {} | mean_gain: {} | std_gain: {} | max_gain: {}'.format(gen, str(round(mean_fit, 2)), str(round(std_fit, 2)), str(round(max_fit, 2)), str(round(mean_gain, 2)), str(round(std_gain, 2)), str(round(max_gain, 2))))
+        print('\nmean_fit: {} | std_fit: {} | max_fit: {} | mean_gain: {} | std_gain: {} | max_gain: {}'.format(str(round(mean_fit, 2)), str(round(std_fit, 2)), str(round(max_fit, 2)), str(round(mean_gain, 2)), str(round(std_gain, 2)), str(round(max_gain, 2))))
         
         # Save training logs
         with open(os.path.join(self.experiment_name, 'optimization_logs.txt'), 'a') as file_aux:
@@ -347,35 +389,52 @@ class GeneticOptimization(object):
         with open(os.path.join(self.experiment_name, 'gen_num.txt'), 'w') as file_aux:
             file_aux.write(str(gen))
 
+    def print_injection_stats(self):
+        print('\n---------------------------------------------------------------------------------')
+        if self.best_gain > self.injected_solutions_max_gain:
+            print('The best solution has improved compared to the injected solution(s)!')
+        else:
+            print('The best solution has not improved compared to the injected solution(s)!')
+        print(f'Final Ranking: {self.injected_solutions_indexes}')
+        print(f'Number of offspring: {self.injected_solutions_offspring}')
+
+        # save to file
+        with open(os.path.join(self.experiment_name, 'injection_stats.txt'), 'w') as file_aux:
+            file_aux.write(f'Solution Improved: {self.best_gain > self.injected_solutions_max_gain}\n')
+            file_aux.write(f'Final Ranking: {self.injected_solutions_indexes}\n')
+            file_aux.write(f'Number of offspring: {self.injected_solutions_offspring}\n')
+
     def optimize(self):
         """
             Finds the best solution for EvoMan.
         """
+        print("\nStarting the optimization process...")
         for gen in range(1, self.generations + 1):
-            print("\nGeneration: {}".format(gen))
+            print("\n---------------------------------------------------------------------------------")
+            print("Generation: {}".format(gen))
 
             # Select parents
             parents, parents_ids = self._tournament_selection()
 
             # Generate children
-            # children = [self._blend_crossover(random.sample(parents_ids, 2)) for _ in range(self.selection_lambda)]
             children = self._blend_crossover(parents_ids)
 
             # Mutate children
-            # children = [self._nonuniform_mutation(child) for child in children]
             children = self._self_adaptive_mutation_n(children)
 
             # Replacement
-            self._replace_worst(parents_ids, children)
-            # self._mu_lambda_selection(parents_ids, children)
+            self._replace_worst(parents_ids, children, gen)
 
             # Check if the best solution has improved
-            current_best_fitness = self.fitness_values[0]
-            if current_best_fitness > self.best_fitness:
+            current_best_gain = self.gain_values[0]
+            if current_best_gain > self.best_gain:
                 np.savetxt(os.path.join(self.experiment_name, 'best_solution.txt'), self.pop[0])
-                self.best_fitness = current_best_fitness
+                self.best_gain = current_best_gain
 
             # Save results
             self.save_results(gen)
 
-        return self.pop[0], self.best_fitness
+        if self.n_injected_solutions > 0:
+            self.print_injection_stats()
+
+        return self.pop[0], self.fitness_values[0]

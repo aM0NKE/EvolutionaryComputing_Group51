@@ -79,6 +79,9 @@ if mode == "test":
     df["time"] = 3000 - df["time"]
     df["gain"] = df["player_life"] - df["enemy_life"]
 
+    print(df.head())
+
+
     # Calculate gain and aggregate data
     df_final = pd.DataFrame(columns=["group", "enemies_slain", "gain", "player_life", "enemy_life", "time"])
     for i, group in enumerate(list(set(df["group"]))):

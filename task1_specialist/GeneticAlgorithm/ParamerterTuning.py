@@ -27,9 +27,9 @@ mkdir_experiment(experiment_name)
 
 # Define the range of values for each parameter
 param_grid = {
-    'selection_lambda': [10, 25, 50],  # Example values, replace with your choices
-    'selection_k': [2, 4, 8],  # Example values, replace with your choices
-    'mutation_rate': [0.01, 0.05, 0.1]  # Example values, replace with your choices
+    'selection_lambda': [10, 25, 50],
+    'selection_k': [2, 4, 8],
+    'mutation_rate': [0.01, 0.05, 0.1]
 }
 # Generate all possible combinations of parameters
 param_combinations = list(itertools.product(*param_grid.values()))
