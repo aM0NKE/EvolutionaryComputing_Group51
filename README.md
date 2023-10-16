@@ -5,8 +5,8 @@
  - Genetic Algorithm (Defensive Fitness Function)
 
  ### Task 2 - Generalist
- - NEAT
- - 2nd EA
+ - Genetic Algorithm (Fully-Random Initial Population)
+ - Genetic Algorithm (Semi-Random Initial Population)
 
  ## Group Members
 
