@@ -1,0 +1,3 @@
+Solution Improved: False
+Final Ranking: {'load_from/up4_comb1_best_solution.txt': 0}
+Number of offspring: {'load_from/up4_comb1_best_solution.txt': 174}

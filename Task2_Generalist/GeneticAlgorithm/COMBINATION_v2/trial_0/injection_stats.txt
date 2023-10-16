@@ -1,0 +1,3 @@
+Solution Improved: True
+Final Ranking: {'load_from/1234best_solution.txt': -2, 'load_from/up4_comb1_best_solution.txt': -6, 'load_from/ALLbest_solution.txt': -14}
+Number of offspring: {'load_from/1234best_solution.txt': 7, 'load_from/up4_comb1_best_solution.txt': 21, 'load_from/ALLbest_solution.txt': 81}
