@@ -22,7 +22,7 @@
   - `-g`: number of generations per optimization cycle (default=30)
 - Plot results: `python3 PlotResults.py`
 	- Note: make sure all directories and enemy groups are set correctly in the script. 
-### Step 4: Show Solution
+### Step 3: Show Solution
 - Command: `python3 ShowSolution.py -e GA1_EGALL`
 - Flags:
 	- `-e`: directory to the experiment
