@@ -64,19 +64,20 @@ def training_plot(enemy_group1, enemy_group2, GA1_EG1_dir, GA1_EG2_dir, GA2_EG1_
         avg_max_fit = np.mean(all_max_fit, axis=0)
 
         # Plot
-        plt.figure(figsize=(9, 5))
+        plt.figure(figsize=(15, 8))
 
         plt.plot(gens, avg_mean_fit, marker='o', linestyle='-', label='Avg. Mean Fitness', color='blue')
         plt.fill_between(gens, min_mean_fit, max_mean_fit, alpha=0.2, color='blue')
         plt.plot(gens, avg_max_fit, marker='o', linestyle='-', label='Avg. Max Fitness', color='red')
         plt.fill_between(gens, min_max_fit, max_max_fit, alpha=0.2, color='red')
-        plt.title(f'GA: {["Fully-Random", "Fully Random", "Semi-Random", "Semi-Random"][dir_n]} | Enemies: {[enemy_group1, enemy_group2, enemy_group1, enemy_group2][dir_n]}', fontsize=22)
-        plt.ylabel('Fitness', fontsize=20)
-        plt.xlabel('Generation', fontsize=20)
-        plt.xticks(fontsize=18)
-        plt.yticks(fontsize=18)
+        plt.title(f'GA: {["Fully-Random", "Fully Random", "Semi-Random", "Semi-Random"][dir_n]} | Enemies: {[enemy_group1, enemy_group2, enemy_group1, enemy_group2][dir_n]}', fontsize=40)
+        plt.ylim(0, 85)
+        plt.ylabel('Fitness', fontsize=35)
+        plt.xlabel('Generation', fontsize=35)
+        plt.xticks(fontsize=30)
+        plt.yticks(fontsize=30)
         plt.grid(True)
-        plt.legend(loc='lower right', fontsize=18)
+        plt.legend(loc='lower right', fontsize=30)
         plt.tight_layout()
         # plt.show()
 
@@ -122,7 +123,7 @@ def boxplot(runs, enemy_group1, enemy_group2, GA1_EG1_dir, GA1_EG2_dir, GA2_EG1_
     t_statisticEG2, p_valueEG2 = stats.ttest_ind(gains[GA2_EG1_dir], gains[GA2_EG2_dir])
 
     colors = ['#4272f5', '#f5425a', '#4272f5', '#f5425a']
-    plt.figure(figsize=(13, 7))
+    plt.figure(figsize=(22, 10))
     boxplot = plt.boxplot(gains.values(), labels=['Fully-Rand. (All)', 'Semi-Rand. (All)', 'Fully-Rand. (1234)', 'Semi-Rand. (1234)'], patch_artist=True)
     # Set box colors
     for box, color in zip(boxplot['boxes'], colors):
@@ -135,11 +136,11 @@ def boxplot(runs, enemy_group1, enemy_group2, GA1_EG1_dir, GA1_EG2_dir, GA2_EG1_
     for median in boxplot['medians']:
         median.set(color='black', linewidth=2)
     # Set the plot title with the t-test result
-    plt.title(f'All: (t-stat={t_statisticEG1:.2f}; p-value={p_valueEG1:.2f}) | {enemy_group2}: (t-stat={t_statisticEG2:.2f}; p-value={p_valueEG2:.2f})', fontsize=22)
-    plt.xlabel('Configuration', fontsize=20)
-    plt.ylabel('Gain', fontsize=20)
-    plt.xticks(fontsize=18)
-    plt.yticks(fontsize=18)
+    plt.title(f'All: (t-stat={t_statisticEG1:.2f}; p-value={p_valueEG1:.2f}) | {enemy_group2}: (t-stat={t_statisticEG2:.2f}; p-value={p_valueEG2:.2f})', fontsize=40)
+    plt.xlabel('Configuration', fontsize=35)
+    plt.ylabel('Total Gain', fontsize=35)
+    plt.xticks(fontsize=30)
+    plt.yticks(fontsize=30)
     plt.tight_layout()
     # plt.show()
     plt.savefig('Gain.png')
@@ -152,15 +153,15 @@ if __name__ == "__main__":
     enemy_group2 = [1,2,3,4]
 
     # Set experiment directories
-    GA1_EG1_dir = 'GA1_EGALL_v2'
-    GA1_EG2_dir = 'GA1_EG1234'
-    GA2_EG1_dir = 'GA2_EGALL'
-    GA2_EG2_dir = 'GA2_EG1234'
+    GA1_EG1_dir = 'Results/GA1_EGALL_v2'
+    GA1_EG2_dir = 'Results/GA1_EG1234'
+    GA2_EG1_dir = 'Results/GA2_EGALL'
+    GA2_EG2_dir = 'Results/GA2_EG1234'
 
     # Plot training progress
-    # training_plot(enemy_group1, enemy_group2, GA1_EG1_dir, GA1_EG2_dir, GA2_EG1_dir, GA2_EG2_dir)
+    training_plot(enemy_group1, enemy_group2, GA1_EG1_dir, GA1_EG2_dir, GA2_EG1_dir, GA2_EG2_dir)
 
     # Plot gain boxplot
     runs = 5
-    boxplot(runs, enemy_group1, enemy_group2, GA1_EG1_dir, GA1_EG2_dir, GA2_EG1_dir, GA2_EG2_dir)
+    # boxplot(runs, enemy_group1, enemy_group2, GA1_EG1_dir, GA1_EG2_dir, GA2_EG1_dir, GA2_EG2_dir)
     
